@@ -27,6 +27,9 @@ AFRAME.registerComponent('simple-navmesh-constraint', {
 
     this.el.sceneEl.addEventListener('child-attached', this.onSceneUpdated);
     this.el.sceneEl.addEventListener('child-detached', this.onSceneUpdated);
+
+    this.objects = [];
+    this.excludes = [];
   },
 
   remove: function () {
@@ -45,13 +48,22 @@ AFRAME.registerComponent('simple-navmesh-constraint', {
   },
 
   updateNavmeshEntities: function () {
-    this.excludes = this.data.exclude ? Array.from(document.querySelectorAll(this.data.exclude)):[];
-    const els = Array.from(document.querySelectorAll(this.data.navmesh));
-    if (els === null) {
+    this.objects.length = 0;
+    this.excludes.length = 0;
+
+    if (this.data.navmesh.length > 0) {
+      for (const navmesh of document.querySelectorAll(this.data.navmesh)) {
+	this.objects.push(navmesh.object3D);
+      }
+    }
+
+    if (this.objects.length === 0) {
       console.warn('simple-navmesh-constraint: Did not match any elements');
-      this.objects = [];
-    } else {
-      this.objects = els.map(el => el.object3D).concat(this.excludes.map(el => el.object3D));
+    } else if (this.data.exclude.length > 0) {
+      for (const excluded of document.querySelectorAll(this.data.exclude)) {
+        this.objects.push(excluded.object3D);
+        this.excludes.push(excluded);
+      }
     }
 
     this.entitiesChanged = false;
