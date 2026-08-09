@@ -1,113 +1,158 @@
-xr-starter-kit
-=============
+# 个人旅行博物馆 XR
 
-A boiler plate project for getting started with VR and AR with AFrame
+一个由 JSON 配置生成的个人 WebXR 照片博物馆。照片可放在 Cloudflare R2 或其他支持 CORS 的对象存储中；场馆会根据模板自动生成房间、门、走廊与电梯。
 
-This site tries to demonstrate many of the WebXR features to work with VR or AR.
+## 运行
 
-## Components
-
-These are some provided components to aid with the endeavour:
-
-### ar-cursor.js
-
-This file provides the `ar-cursor` component for `clicking` on objects in AR using any
-XR input such as tapping on the screen or using an external controller.
-
-Add it to the `<a-scene>` element along with a raycaster and it will use the raycaster to
-determine which objects are selected and fire `"click"` events on them.
-
-```html
-<a-scene ar-cursor raycaster="objects: #my-objects *">
+```bash
+npm install
+npm run dev
 ```
 
-### ar-shadow-helper.js
+WebXR 在正式环境中需要 HTTPS。桌面端使用鼠标观察、WASD 行走并点击门；VR 中可使用控制器或手势射线开门，左控制器支持瞬移。
 
-This file provides the `ar-shadow-helper` component which lets a plane track a particular object
-so that it recieves an optimal amount of shadow from a directional light.
+## 配置博物馆
 
-This should have an object which can receive a shadow and works well for augmented reality with the
-`shader:shadow` material
+编辑 `public/museum.json`，或通过查询参数加载另一份配置：
 
-It also includes `auto-shadow-cam` which controls the orthogonal shadow camera of a directional light
-so that the camera covers the minimal area required to fully light an object.
-
-```html
-<a-light id="dirlight" auto-shadow-cam intensity="0.4" light="castShadow:true;type:directional" position="10 10 10"></a-light>
-    
-<a-entity
-  material="shader:shadow; depthWrite:false; opacity:0.9;"
-  visible="false"
-  geometry="primitive:shadow-plane;"
-  shadow="cast:false;receive:true;"
-  ar-shadow-helper="target:#my-objects;light:#dirlight;"
-></a-entity>
+```text
+https://museum.example.com/?config=https://static.example.com/my-museum.json
 ```
 
-### model-utils.js
+运行校验：
 
-This file provides utilities for modifying 3D models and how they are displayed.
-
-* `exposure="0.5"`, add this to `<a-scene>` to change the exposure of the scene to make it brighter or darker
-* `no-tonemapping`, this opts an object out of tone mapping which is useful for using flat materials to look like light sources
-* `lightmap="src:#bake;intensity: 10; filter:Window,Ceiling,floor;"`, this lets you use a lightmap on a gltf model, to use it provide the lightmap and optionally constrain the lightmap to certain elements
-* `depthwrite`, this lets you overwrite a materials depthwrite property useful in case of weird depth issues on materials with transparency
-* `hideparts`, this lets you make certain elements of a gltf object invisible, the better thing to do is to edit the object to remove those parts 
-
-### simple-navmesh-constraint.js
-
-This provides `simple-navmesh-constraint` which allows you to constrain an object to another object,
-if you set the `fall` property the object won't fall unless the floor underneath it is within that distance.
-
-This component works by comparing the objects position between frames. Ideally this would run after any movement happen but before it is rendered.
-To enable this you should place this component after any components which move the object such as `wasd-controls`.
-
-If the object needs to float off the floor (like the camera) then set the height property and it will stay that far from the ground.
-
-```html
-<a-assets>
- <a-asset-item id="navmesh-glb" src="navmesh.glb"></a-asset-item>
-</a-assets>
-<a-gltf-model class="navmesh" src="#navmesh-glb" visible="false"></a-gltf-model>
-<a-camera wasd-controls="acceleration:20;" simple-navmesh-constraint="navmesh:.navmesh;fall:0.5;height:1.65;" look-controls>
+```bash
+npm run validate:config
+npm run validate:config -- path/to/another.json
 ```
 
-If you're using `blink-controls` and `movement-controls` components that are using a camera rig, you want to set `height:0` and set the camera position instead like this:
+### 模板容量
 
-```html
-<a-entity
-  id="cameraRig"
-  simple-navmesh-constraint="navmesh:.navmesh;fall:0.5;height:0;exclude:.navmesh-hole;"
-  movement-controls="speed:0.15;camera:#head;"
-  position="-1 0 1"
->
-  <a-entity id="head" camera look-controls position="0 1.65 0"></a-entity>
-</a-entity>
+| 模板 | 尺寸 | 门位 | 展陈板块 | 照片上限 |
+| --- | --- | ---: | ---: | ---: |
+| `lobby-atrium` | 18×14×5 m | 6 | 大厅内容 | 1 张主视觉 |
+| `gallery-small` | 14×10×4.5 m | 2 | 2 | 16 |
+| `gallery-medium` | 18×12×5 m | 3 | 3 | 24 |
+| `gallery-large` | 22×16×5.5 m | 4 | 4 | 36 |
+
+门号都包含进入房间使用的门。只有 `connections` 中出现的门才会显示；未连接门位自动成为完整墙面。
+
+### 图片 URL
+
+每张照片必须配置 `original`，`medium` 和 `low` 可省略：
+
+```json
+{
+  "sources": {
+    "original": "https://images.example.com/trip/photo.jpg",
+    "medium": "https://images.example.com/trip/photo-2048.webp",
+    "low": "https://images.example.com/trip/photo-512.webp"
+  },
+  "title": "雨后的新宿",
+  "location": "东京",
+  "date": "2025-04-12",
+  "description": "傍晚沿街散步时拍摄。",
+  "alt": "雨后的东京街道"
+}
 ```
 
-You can't use `wasd-controls` if you're using `movement-controls`. `movement-controls` includes the `keyboard` controls that is moving the camera rig position. The `blink-controls` component is also moving the camera rig position. The `wasd-controls` component needs to be on the same entity than the `look-controls` for it to work properly, so that's not compatible with using `movement-controls` and `blink-controls`.
+- 8 米以外使用低清图。
+- 2–8 米使用中清图。
+- 2 米内并持续注视照片时使用原图，同时最多保留两张原图纹理。
+- 缺少低清或中清 URL 时，浏览器会下载原图并缩小 GPU 纹理；这不能减少首次下载流量，所以大量照片时推荐在 R2 中保存三个尺寸。
+- 说明字段全部省略时不会生成说明牌。
 
-The `exclude:.navmesh-hole` option allows you to have a navmesh that excludes some other geometries, like a plane that has the `navmesh-hole` class.
-Here is an example of how it works, with a navmesh from a green plane and exclude of a small red plane:
+## Cloudflare R2 CORS
 
-```html
-<a-gltf-model src="piano.glb" position="-6 0 1">
-  <a-plane
-    class="navmesh-hole"
-    rotation="-90 0 0"
-    width="1.5"
-    height="0.6"
-    position="0 0.001 0"
-    color="red"
-    visible="true"
-  ></a-plane>
-</a-gltf-model>
-<a-plane
-  class="navmesh"
-  rotation="-90 0 0"
-  width="50"
-  height="50"
-  color="green"
-  visible="true"
-></a-plane>
+生产环境建议把 R2 绑定到自定义域名，并允许博物馆域名执行 `GET` 和 `HEAD`。示例策略：
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://museum.example.com", "http://localhost:4173"],
+    "AllowedMethods": ["GET", "HEAD"],
+    "AllowedHeaders": ["*"],
+    "ExposeHeaders": ["Content-Length", "ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+## JSON 最小结构
+
+```json
+{
+  "version": 1,
+  "museum": {
+    "title": "我的博物馆",
+    "lobby": { "id": "lobby", "template": "lobby-atrium" }
+  },
+  "rooms": [
+    {
+      "id": "room-a",
+      "template": "gallery-small",
+      "title": "第一组照片",
+      "blocks": [{ "photos": [{ "sources": { "original": "https://example.com/photo.jpg" } }] }]
+    }
+  ],
+  "connections": [
+    { "from": "lobby.door-1", "to": "room-a.door-1" }
+  ]
+}
+```
+
+房间不需要坐标。布局器优先直接拼接，其次生成直廊或转角廊；距离超过 24 米或发生空间冲突时自动改用电梯。
+
+### 房间主题与材质
+
+房间可选配置 `theme`：`classic`、`botanical`、`art-deco` 或 `terrazzo`。主题会同时切换墙纸、地板、踢脚线和程序化 3D 装饰；省略时使用 `classic`。
+
+```json
+{
+  "id": "botanical-archive",
+  "template": "gallery-medium",
+  "theme": "botanical",
+  "title": "植物与远方",
+  "blocks": []
+}
+```
+
+新增的植物壁纸、Art Deco 壁纸、水磨石和深色人字木地板位于 `public/museum-assets/`，均按可重复平铺方式加载。
+
+展厅装饰还包括程序化构建的大理石半身像、青瓷器组、青铜天球仪、织物地毯和隔离柱。这些模型使用 `material-marble-warm.webp`、`material-celadon-crackle.webp`、`material-bronze-patina.webp` 与 `material-rug-burgundy.webp`，并按照房间主题自动组合。
+
+## 模型与碰撞
+
+可复用模型按类型拆分在 `src/museum/models/`：房间外壳、门、电梯、展框、家具和博物馆标识各自独立，便于单独调整几何、材质和性能。
+
+- 实体墙、走廊墙、电梯侧壁和后壁使用静态碰撞体。
+- 关闭的门会动态阻挡通行，开门后才解除；房间回收时先同步关门，再释放连接空间。
+- 长椅和绿植花盆等落地家具参与碰撞；墙挂照片和文字牌不额外占用行走空间。
+- 左上角参观提示仅用于桌面端，进入 WebXR 后自动隐藏。
+
+## 本地出生点调试
+
+在 `localhost`、`127.0.0.1` 和 `*.localhost` 本地预览地址中，可以用 URL 参数直接出生到指定位置：
+
+```text
+?spawn=cities
+?spawn=cities.door-3
+?spawn=cities.door-3&spawnSide=cabin
+?spawn=cities.bench
+?spawn=cities.photo-1
+?spawn=cities.plant-1
+```
+
+- `spawn=<房间 ID>`：出生在房间默认位置。
+- `spawn=<房间 ID>.<锚点>`：出生在门、长椅、照片或植物旁并自动面向目标。
+- 门锚点默认为房间内侧；`spawnSide=cabin` 会建立连接、打开当前侧门并出生在轿厢内。
+- `spawnDistance=2.5` 可覆盖与目标的距离，范围为 0.6–8 米。
+- `spawnYaw=90` 可覆盖自动朝向，单位为度。
+- 旧的 `previewRoom`、`previewDoor` 参数仍可继续使用。
+
+## 测试与构建
+
+```bash
+npm test
+npm run build
 ```

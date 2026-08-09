@@ -1,0 +1,11 @@
+node_modules/
+dist/
+tmp/
+.vercel/
+.wrangler/
+public/demo/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store

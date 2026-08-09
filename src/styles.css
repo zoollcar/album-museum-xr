@@ -1,0 +1,92 @@
+:root {
+  color: #29231d;
+  font-family: "Avenir Next", "Segoe UI", "Microsoft YaHei", sans-serif;
+  font-synthesis: none;
+  --ink: #29231d;
+  --ivory: #f4eee6;
+  --oak: #8f6540;
+  --bronze: #886b43;
+  --glass: rgba(245, 238, 228, 0.88);
+}
+
+* { box-sizing: border-box; }
+html, body, #app-shell { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+body { background: #d9e3e8; }
+#dom-overlay { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
+#dom-overlay button, .museum-header, .help-panel { pointer-events: auto; }
+body.is-vr #museum-header,
+body.is-vr #help-panel,
+body.is-vr #crosshair,
+body.is-vr .a-enter-vr { display: none !important; }
+a-scene { width: 100% !important; height: 100% !important; }
+.a-enter-vr { right: 22px !important; bottom: 22px !important; }
+.a-enter-vr-button {
+  width: 54px !important;
+  height: 54px !important;
+  border: 1px solid rgba(255,255,255,.75) !important;
+  border-radius: 50% !important;
+  background-color: rgba(42,35,28,.84) !important;
+  box-shadow: 0 12px 35px rgba(34,27,21,.25);
+}
+
+.loading-screen {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-content: center;
+  justify-items: center; text-align: center; padding: 32px;
+  color: var(--ink); background: #ebe2d6;
+  transition: opacity .7s ease, visibility .7s ease;
+}
+.loading-screen.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.loading-mark {
+  width: 46px; height: 46px; margin-bottom: 24px; border: 1px solid var(--bronze);
+  transform: rotate(45deg); animation: breathe 1.8s ease-in-out infinite;
+}
+@keyframes breathe { 50% { transform: rotate(45deg) scale(.72); opacity: .45; } }
+.loading-screen h1 { margin: 7px 0 10px; font-family: Georgia, "Noto Serif SC", serif; font-size: clamp(30px, 4vw, 54px); font-weight: 400; }
+.loading-screen p { margin: 0; color: #776858; }
+.eyebrow { margin: 0; color: var(--bronze); font-size: 10px; letter-spacing: .25em; font-weight: 700; }
+.loading-track { width: min(300px, 70vw); height: 2px; margin-top: 26px; overflow: hidden; background: rgba(87,67,49,.15); }
+.loading-track span { display: block; width: 12%; height: 100%; background: var(--bronze); transition: width .35s ease; }
+
+.museum-header {
+  position: fixed; z-index: 5; top: 22px; left: 24px; display: flex; gap: 28px; align-items: flex-start;
+  padding: 15px 16px 14px 18px; border: 1px solid rgba(112,86,60,.16);
+  background: var(--glass); backdrop-filter: blur(14px); box-shadow: 0 12px 36px rgba(55,42,31,.08);
+  transition: opacity .25s ease;
+}
+.museum-header h1 { margin: 4px 0 2px; font-family: Georgia, "Noto Serif SC", serif; font-size: 20px; font-weight: 400; }
+.museum-header #room-title { margin: 0; color: #796a5b; font-size: 12px; }
+.quiet-button, .close-button {
+  border: 0; color: #5e4b39; background: transparent; cursor: pointer; font: inherit;
+}
+.quiet-button { padding: 6px 0; border-bottom: 1px solid #a99177; font-size: 12px; }
+.help-panel {
+  position: fixed; z-index: 7; top: 22px; right: 22px; width: min(340px, calc(100vw - 44px));
+  padding: 26px 28px; border: 1px solid rgba(112,86,60,.16); background: rgba(246,240,232,.96);
+  box-shadow: 0 18px 54px rgba(55,42,31,.15); transition: opacity .25s ease, transform .25s ease;
+}
+.help-panel h2 { margin: 6px 0 18px; font-family: Georgia, "Noto Serif SC", serif; font-size: 28px; font-weight: 400; }
+.help-panel dl { margin: 0; }
+.help-panel dl div { padding: 13px 0; border-top: 1px solid rgba(112,86,60,.15); }
+.help-panel dt { margin-bottom: 4px; color: #6e5135; font-weight: 700; }
+.help-panel dd { margin: 0; color: #74695e; font-size: 13px; line-height: 1.65; }
+.close-button { position: absolute; top: 10px; right: 12px; font-size: 24px; }
+.is-hidden { opacity: 0 !important; pointer-events: none !important; }
+.help-panel.is-hidden { transform: translateY(-8px); }
+
+.toast {
+  position: fixed; z-index: 8; left: 50%; bottom: 28px; transform: translateX(-50%);
+  max-width: min(520px, calc(100vw - 40px)); padding: 12px 17px; color: #fffaf2;
+  background: rgba(48,39,31,.88); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(10px);
+  font-size: 13px; letter-spacing: .02em; transition: opacity .25s ease;
+}
+#crosshair {
+  position: fixed; z-index: 4; left: 50%; top: 50%; width: 6px; height: 6px;
+  margin: -3px 0 0 -3px; border: 1px solid rgba(40,32,25,.8); border-radius: 50%;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.52); pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .museum-header { top: 12px; left: 12px; right: 12px; justify-content: space-between; }
+  .museum-header h1 { font-size: 17px; }
+  .help-panel { top: 12px; right: 12px; }
+}
