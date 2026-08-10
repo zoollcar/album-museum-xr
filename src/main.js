@@ -71,16 +71,19 @@ function waitForScene(scene) {
   return new Promise((resolve) => scene.addEventListener('loaded', resolve, { once: true }));
 }
 
-async function bootstrap() {
+async function loadMuseumConfig(configUrl) {
+  const response = await fetch(configUrl, { credentials: 'omit' });
+  if (!response.ok) throw new Error(`无法读取配置 ${configUrl}（${response.status}）`);
+  return response.json();
+}
+
+async function startMuseum(configUrl) {
   const ui = new MuseumUI();
   try {
     ui.progress(16, '正在准备博物馆', '读取 JSON 配置…');
     const params = new URLSearchParams(window.location.search);
     const spawnRequest = parseSpawnRequest(params, window.location.hostname);
-    const configUrl = params.get('config') || '/museum.json';
-    const response = await fetch(configUrl, { credentials: 'omit' });
-    if (!response.ok) throw new Error(`无法读取配置 ${configUrl}（${response.status}）`);
-    const config = await response.json();
+    const config = await loadMuseumConfig(configUrl);
     const validation = validateMuseumConfig(config);
     if (!validation.valid) {
       ui.fail(validation.errors);
@@ -122,4 +125,62 @@ async function bootstrap() {
   }
 }
 
-bootstrap();
+function createMuseumCard(museum, onSelect) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'museum-card';
+  button.innerHTML = `<span class="museum-card-mark" aria-hidden="true"></span><span><strong>${escapeHtml(museum.title)}</strong><small>${escapeHtml(museum.description || '进入展馆，开始自由参观')}</small></span><span class="museum-card-arrow" aria-hidden="true">→</span>`;
+  button.addEventListener('click', () => onSelect(museum.config));
+  return button;
+}
+
+async function setupWelcome() {
+  const welcome = document.getElementById('welcome-screen');
+  const list = document.getElementById('museum-list');
+  const count = document.getElementById('museum-count');
+  const status = document.getElementById('welcome-status');
+  const importer = document.getElementById('tour-import');
+  const start = (configUrl) => {
+    welcome.classList.add('is-hidden');
+    startMuseum(configUrl);
+  };
+
+  try {
+    const manifest = await loadMuseumConfig('/museums/index.json');
+    const museums = Array.isArray(manifest.museums) ? manifest.museums : [];
+    count.textContent = `${museums.length} 个馆藏`;
+    if (!museums.length) {
+      list.textContent = '暂时没有可参观的博物馆。';
+    } else {
+      museums.forEach((museum) => list.appendChild(createMuseumCard(museum, start)));
+    }
+  } catch (error) {
+    count.textContent = '无法读取馆藏';
+    status.textContent = '本地博物馆目录暂时无法读取，你仍可以导入 JSON 游览。';
+    console.error(error);
+  }
+
+  importer.addEventListener('change', async () => {
+    const file = importer.files?.[0];
+    if (!file) return;
+    status.textContent = '正在检查导入的游览…';
+    try {
+      const config = JSON.parse(await file.text());
+      const validation = validateMuseumConfig(config);
+      if (!validation.valid) throw new Error(validation.errors[0]);
+      const configUrl = URL.createObjectURL(new Blob([JSON.stringify(config)], { type: 'application/json' }));
+      start(configUrl);
+    } catch (error) {
+      status.textContent = `无法导入：${error.message || 'JSON 格式不正确'}`;
+      importer.value = '';
+    }
+  });
+}
+
+const params = new URLSearchParams(window.location.search);
+if (params.get('config')) {
+  document.getElementById('welcome-screen').classList.add('is-hidden');
+  startMuseum(params.get('config'));
+} else {
+  setupWelcome();
+}

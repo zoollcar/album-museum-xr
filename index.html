@@ -9,6 +9,24 @@
   </head>
   <body>
     <div id="app-shell">
+      <main id="welcome-screen" class="welcome-screen" aria-labelledby="welcome-title">
+        <div class="welcome-content">
+          <p class="eyebrow">PERSONAL ARCHIVE</p>
+          <h1 id="welcome-title">欢迎来到照片博物馆</h1>
+          <p class="welcome-intro">选择一个馆藏开始参观，或导入一份 JSON 游览配置。</p>
+          <section class="museum-picker" aria-labelledby="museum-picker-title">
+            <div class="picker-heading">
+              <h2 id="museum-picker-title">本地博物馆</h2>
+              <span id="museum-count" class="museum-count">正在查找…</span>
+            </div>
+            <div id="museum-list" class="museum-list" aria-live="polite"></div>
+          </section>
+          <div class="welcome-divider"><span>或</span></div>
+          <label class="import-button" for="tour-import">导入 JSON 游览</label>
+          <input id="tour-import" type="file" accept="application/json,.json" hidden />
+          <p id="welcome-status" class="welcome-status" role="status" aria-live="polite"></p>
+        </div>
+      </main>
       <div id="loading-screen" class="loading-screen" role="status" aria-live="polite">
         <div class="loading-mark" aria-hidden="true"></div>
         <p class="eyebrow">PERSONAL ARCHIVE</p>

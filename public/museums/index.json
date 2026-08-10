@@ -1,0 +1,10 @@
+{
+  "museums": [
+    {
+      "id": "travel-museum",
+      "title": "我的旅行博物馆",
+      "description": "一路收藏的风景与故事",
+      "config": "/museums/travel-museum.json"
+    }
+  ]
+}
