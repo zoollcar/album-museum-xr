@@ -1,0 +1,4 @@
+interface:
+  display_name: "生成博物馆 JSON"
+  short_description: "生成、审查并校验本项目可直接加载的博物馆 JSON 配置"
+  default_prompt: "Use $generate-museum-json to create and validate a museum JSON configuration for this project."

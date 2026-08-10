@@ -140,7 +140,7 @@ export class MuseumScene {
     else this.buildGalleryContent(group, room, template, connectedDoorIds);
     this.buildRoomDoors(group, room);
 
-    const loaded = { room, template, placement, group };
+    const loaded = { room, template, placement, group, portableFrames: [...group.querySelectorAll('.portable-frame')] };
     this.loadedRooms.set(roomId, loaded);
     this.addRoomRegion(roomId, placement, template);
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -189,7 +189,7 @@ export class MuseumScene {
       if (!slot) slot = slots.find((candidate) => !candidate.assigned);
       if (!slot) return;
       slot.assigned = true;
-      const { holder, frame, plane } = buildPhotoMount(group, slot);
+      const { holder, frame, plane } = buildPhotoMount(group, slot, `portable-frame-${room.id}-${index + 1}`);
       const placement = this.layout.placements.get(room.id);
       const photoPosition = this.localToWorld(placement, slot.x, slot.z);
       this.registerSpawnAnchor(room.id, `photo-${index + 1}`, {
@@ -590,6 +590,11 @@ export class MuseumScene {
     for (const edge of this.layout.adjacency.get(this.currentRoomId) || []) keep.add(edge.other.roomId);
     for (const [roomId, loaded] of [...this.loadedRooms]) {
       if (keep.has(roomId)) continue;
+      for (const frame of loaded.portableFrames || []) {
+        const grabber = frame.dataset.oldGrabber && document.getElementById(frame.dataset.oldGrabber);
+        grabber?.components?.['grab-magnet-target']?.grabEnd();
+        if (!loaded.group.contains(frame)) frame.remove();
+      }
       this.textureManager.disposeRoom(roomId);
       disposeTree(loaded.group);
       loaded.group.remove();

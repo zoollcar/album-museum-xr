@@ -42,8 +42,22 @@
           <h1 id="museum-title">个人旅行博物馆</h1>
           <p id="room-title">大厅</p>
         </div>
-        <button id="help-toggle" class="quiet-button" type="button" aria-expanded="false">参观提示</button>
+        <div class="header-actions">
+          <button id="settings-toggle" class="quiet-button" type="button" aria-expanded="false">设置</button>
+          <button id="help-toggle" class="quiet-button" type="button" aria-expanded="false">参观提示</button>
+        </div>
       </header>
+
+      <aside id="settings-panel" class="settings-panel is-hidden" aria-label="设置">
+        <button id="settings-close" class="close-button" type="button" aria-label="关闭">×</button>
+        <p class="eyebrow">SETTINGS</p>
+        <h2>移动方式</h2>
+        <fieldset class="movement-options">
+          <legend>VR 摇杆行为</legend>
+          <label><input type="radio" name="page-vr-movement" value="teleport" data-vr-movement checked /> Teleport 瞬移</label>
+          <label><input type="radio" name="page-vr-movement" value="move" data-vr-movement /> Move 连续移动</label>
+        </fieldset>
+      </aside>
 
       <aside id="help-panel" class="help-panel is-hidden" aria-label="参观提示">
         <button id="help-close" class="close-button" type="button" aria-label="关闭">×</button>
@@ -51,13 +65,26 @@
         <h2>自由参观</h2>
         <dl>
           <div><dt>桌面</dt><dd>鼠标观察，WASD 行走，点击门加载下一个房间。</dd></div>
-          <div><dt>VR</dt><dd>控制器或手势射线开门，摇杆移动，也可瞬移。</dd></div>
+          <div><dt>移动端</dt><dd>按住左下方向键移动，在屏幕其余区域拖动视角；陀螺仪转动仍然有效。</dd></div>
+          <div><dt>VR</dt><dd>在腕部设置中切换瞬移或连续移动；握住手柄或捏合手指可拿起小画框。</dd></div>
           <div><dt>照片</dt><dd>靠近并注视照片时自动切换到原始画质。</dd></div>
         </dl>
       </aside>
 
       <div id="toast" class="toast is-hidden" role="status" aria-live="polite"></div>
       <div id="crosshair" aria-hidden="true"></div>
+      <nav id="mobile-dpad" class="mobile-dpad" aria-label="移动方向">
+        <button class="dpad-button dpad-up" type="button" data-move-direction="forward" aria-label="向前">▲</button>
+        <button class="dpad-button dpad-left" type="button" data-move-direction="left" aria-label="向左">◀</button>
+        <button class="dpad-button dpad-down" type="button" data-move-direction="backward" aria-label="向后">▼</button>
+        <button class="dpad-button dpad-right" type="button" data-move-direction="right" aria-label="向右">▶</button>
+      </nav>
+      <section id="vr-settings" class="vr-settings-source" aria-label="VR 设置">
+        <p>SETTINGS</p>
+        <h2>移动方式</h2>
+        <label><input type="radio" name="wrist-vr-movement" value="teleport" data-vr-movement checked /> Teleport</label>
+        <label><input type="radio" name="wrist-vr-movement" value="move" data-vr-movement /> Move</label>
+      </section>
       </div>
 
       <a-scene
@@ -73,7 +100,7 @@
         <a-assets timeout="120000"></a-assets>
         <a-entity id="museum-root"></a-entity>
 
-        <a-entity id="camera-rig" position="0 0 0" museum-walk-constraint desktop-movement="camera: #head; speed: 3.2" xr-thumbstick-move="camera: #head; hand: right; speed: 2.2">
+        <a-entity id="camera-rig" position="0 0 0" museum-walk-constraint desktop-movement="camera: #head; speed: 3.2" mobile-dpad-movement="camera: #head; controls: #mobile-dpad; speed: 2.6" xr-thumbstick-move="camera: #head; hand: right; speed: 2.2; enabled: false">
           <a-entity
             id="head"
             camera="near: 0.05; far: 180"
@@ -87,22 +114,23 @@
             ></a-entity>
           </a-entity>
 
-          <a-entity
-            id="left-controller"
-            laser-controls="hand: left"
-            raycaster="objects: .interactive, .navmesh; far: 30"
-            cursor="rayOrigin: entity; fuse: false"
-            blink-controls="cameraRig: #camera-rig; teleportOrigin: #head; collisionEntities: .navmesh; rotateOnTeleport: false"
-          ></a-entity>
-          <a-entity
-            id="right-controller"
-            laser-controls="hand: right"
-            raycaster="objects: .interactive; far: 20"
-            cursor="rayOrigin: entity; fuse: false"
-          ></a-entity>
-          <a-entity id="left-hand" hand-tracking-controls="hand: left; modelStyle: mesh" hand-ray-click="hand: left"></a-entity>
-          <a-entity id="right-hand" hand-tracking-controls="hand: right; modelStyle: mesh" hand-ray-click="hand: right"></a-entity>
+          <a-entity id="immersive-inputs" handy-controls="materialOverride: both" material="color: #b69362; metalness: .65; roughness: .32" pinch-grab-events>
+            <a-entity id="left-ray" data-left="ray" cursor="rayOrigin: entity; fuse: false; downEvents: selectstart; upEvents: selectend" raycaster="objects: .interactive, [html], .navmesh; far: 30"></a-entity>
+            <a-entity id="right-ray" data-right="ray" cursor="rayOrigin: entity; fuse: false; downEvents: selectstart; upEvents: selectend" raycaster="objects: .interactive, [html], .navmesh; far: 30"></a-entity>
+            <a-entity id="left-grab" data-left="grip" data-magnet="magnet-left" grab-magnet-target="startEvents: squeezestart, pose_fist, pinchgrabstart; stopEvents: squeezeend, pose_cancel_fist, pose_flat_fuseShort, pinchgrabend; noMagnetEl: #left-grip-actual"></a-entity>
+            <a-entity id="right-grab" data-right="grip" data-magnet="magnet-right" grab-magnet-target="startEvents: squeezestart, pose_fist, pinchgrabstart; stopEvents: squeezeend, pose_cancel_fist, pose_flat_fuseShort, pinchgrabend; noMagnetEl: #right-grip-actual"></a-entity>
+            <a-entity id="left-grip-actual" data-left="grip" data-no-magnet>
+              <a-entity id="wrist-settings-mesh" html="html: #vr-settings; cursor: #html-cursor" position="-.14 -.02 -.03" rotation="-80 90 0" scale=".72 .72 .72"></a-entity>
+            </a-entity>
+            <a-entity id="right-grip-actual" data-right="grip" data-no-magnet></a-entity>
+            <a-entity data-left="index-finger-tip" class="left-index-tip" visible="false"></a-entity>
+            <a-entity data-left="thumb-tip" class="left-thumb-tip" visible="false"></a-entity>
+            <a-entity data-right="index-finger-tip" class="right-index-tip" visible="false"></a-entity>
+            <a-entity data-right="thumb-tip" class="right-thumb-tip" visible="false"></a-entity>
+          </a-entity>
         </a-entity>
+
+        <a-sphere id="html-cursor" radius=".005" material="shader: flat; color: #2b2118" visible="false"></a-sphere>
 
         <a-entity light="type: ambient; color: #f5eadc; intensity: 1.05"></a-entity>
         <a-entity light="type: directional; color: #fff9ef; intensity: 1.35; castShadow: true" position="-8 16 6"></a-entity>

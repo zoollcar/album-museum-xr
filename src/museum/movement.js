@@ -14,3 +14,11 @@ export function resolvePlanarMovement(cameraDirection, forwardAmount, rightAmoun
   }
   return { x, z };
 }
+
+export function movementAxesFromDirections(directions) {
+  const active = directions instanceof Set ? directions : new Set(directions || []);
+  return {
+    forward: Number(active.has('forward')) - Number(active.has('backward')),
+    right: Number(active.has('right')) - Number(active.has('left'))
+  };
+}

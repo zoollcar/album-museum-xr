@@ -1,11 +1,15 @@
 import 'aframe';
 import 'aframe-blink-controls';
+import 'handy-work/build/handy-controls.min.js';
+import 'handy-work/build/magnet-helpers.min.js';
+import 'aframe-htmlmesh/build/aframe-html.min.js';
 import './styles.css';
 import { validateMuseumConfig } from './config/validate.js';
 import { buildMuseumLayout } from './museum/layout.js';
 import { registerMuseumComponents } from './museum/components.js';
 import { MuseumScene } from './museum/scene-builder.js';
 import { parseSpawnRequest } from './museum/spawn.js';
+import { VrMovementModeController } from './museum/movement-mode.js';
 
 registerMuseumComponents();
 
@@ -20,10 +24,14 @@ class MuseumUI {
     this.roomTitle = document.getElementById('room-title');
     this.toastEl = document.getElementById('toast');
     this.help = document.getElementById('help-panel');
+    this.settings = document.getElementById('settings-panel');
     this.helpToggle = document.getElementById('help-toggle');
+    this.settingsToggle = document.getElementById('settings-toggle');
     this.toastTimer = null;
     this.helpToggle.addEventListener('click', () => this.setHelp(this.help.classList.contains('is-hidden')));
     document.getElementById('help-close').addEventListener('click', () => this.setHelp(false));
+    this.settingsToggle.addEventListener('click', () => this.setSettings(this.settings.classList.contains('is-hidden')));
+    document.getElementById('settings-close').addEventListener('click', () => this.setSettings(false));
   }
 
   progress(percent, title, detail) {
@@ -35,6 +43,7 @@ class MuseumUI {
   ready() {
     this.loading.classList.add('is-hidden');
     this.header.classList.remove('is-hidden');
+    document.body.classList.add('museum-ready');
   }
 
   fail(errors) {
@@ -50,8 +59,20 @@ class MuseumUI {
   }
 
   setHelp(open) {
+    if (open) this.setSettings(false);
     this.help.classList.toggle('is-hidden', !open);
     this.helpToggle.setAttribute('aria-expanded', String(open));
+    window.dispatchEvent(new Event('mobile-controls-reset'));
+  }
+
+  setSettings(open) {
+    if (open) {
+      this.help.classList.add('is-hidden');
+      this.helpToggle.setAttribute('aria-expanded', 'false');
+    }
+    this.settings.classList.toggle('is-hidden', !open);
+    this.settingsToggle.setAttribute('aria-expanded', String(open));
+    window.dispatchEvent(new Event('mobile-controls-reset'));
   }
 
   toast(message, duration = 2800) {
@@ -94,6 +115,12 @@ async function startMuseum(configUrl) {
     const layout = buildMuseumLayout(config);
     const scene = document.getElementById('museum-scene');
     await waitForScene(scene);
+    const movementMode = new VrMovementModeController({
+      scene,
+      rig: document.getElementById('camera-rig'),
+      teleporters: [document.getElementById('left-ray'), document.getElementById('right-ray')],
+      inputs: document.querySelectorAll('[data-vr-movement]')
+    });
     ui.progress(58, '正在布置大厅', '准备灯光、展墙和欢迎展品…');
     const app = new MuseumScene({
       scene,
@@ -112,6 +139,7 @@ async function startMuseum(configUrl) {
 
     scene.addEventListener('enter-vr', () => {
       ui.setHelp(false);
+      ui.setSettings(false);
       document.body.classList.add('is-vr');
       document.getElementById('crosshair').classList.add('is-hidden');
     });
@@ -119,6 +147,7 @@ async function startMuseum(configUrl) {
       document.body.classList.remove('is-vr');
       document.getElementById('crosshair').classList.remove('is-hidden');
     });
+    scene.addEventListener('remove', () => movementMode.dispose(), { once: true });
   } catch (error) {
     console.error(error);
     ui.fail([error.message || '未知错误']);

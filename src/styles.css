@@ -39,10 +39,12 @@ body { background: #d9e3e8; }
 .import-button:hover { color: #fffaf3; background: #8f6540; }
 .welcome-status { min-height: 1.5em; margin: 14px 0 0; color: #80604a; font-size: 13px; }
 #dom-overlay { position: fixed; inset: 0; z-index: 4; pointer-events: none; }
-#dom-overlay button, .museum-header, .help-panel { pointer-events: auto; }
+#dom-overlay button, .museum-header, .help-panel, .settings-panel, .vr-settings-source { pointer-events: auto; }
 body.is-vr #museum-header,
 body.is-vr #help-panel,
+body.is-vr #settings-panel,
 body.is-vr #crosshair,
+body.is-vr #mobile-dpad,
 body.is-vr .a-enter-vr { display: none !important; }
 a-scene { width: 100% !important; height: 100% !important; }
 .a-enter-vr { right: 22px !important; bottom: 22px !important; }
@@ -81,16 +83,17 @@ a-scene { width: 100% !important; height: 100% !important; }
 }
 .museum-header h1 { margin: 4px 0 2px; font-family: Georgia, "Noto Serif SC", serif; font-size: 20px; font-weight: 400; }
 .museum-header #room-title { margin: 0; color: #796a5b; font-size: 12px; }
+.header-actions { display: flex; gap: 15px; align-items: center; }
 .quiet-button, .close-button {
   border: 0; color: #5e4b39; background: transparent; cursor: pointer; font: inherit;
 }
 .quiet-button { padding: 6px 0; border-bottom: 1px solid #a99177; font-size: 12px; }
-.help-panel {
+.help-panel, .settings-panel {
   position: fixed; z-index: 7; top: 22px; right: 22px; width: min(340px, calc(100vw - 44px));
   padding: 26px 28px; border: 1px solid rgba(112,86,60,.16); background: rgba(246,240,232,.96);
   box-shadow: 0 18px 54px rgba(55,42,31,.15); transition: opacity .25s ease, transform .25s ease;
 }
-.help-panel h2 { margin: 6px 0 18px; font-family: Georgia, "Noto Serif SC", serif; font-size: 28px; font-weight: 400; }
+.help-panel h2, .settings-panel h2 { margin: 6px 0 18px; font-family: Georgia, "Noto Serif SC", serif; font-size: 28px; font-weight: 400; }
 .help-panel dl { margin: 0; }
 .help-panel dl div { padding: 13px 0; border-top: 1px solid rgba(112,86,60,.15); }
 .help-panel dt { margin-bottom: 4px; color: #6e5135; font-weight: 700; }
@@ -98,6 +101,41 @@ a-scene { width: 100% !important; height: 100% !important; }
 .close-button { position: absolute; top: 10px; right: 12px; font-size: 24px; }
 .is-hidden { opacity: 0 !important; pointer-events: none !important; }
 .help-panel.is-hidden { transform: translateY(-8px); }
+.settings-panel.is-hidden { transform: translateY(-8px); }
+.movement-options { display: grid; gap: 12px; margin: 0; padding: 15px 0 0; border: 0; border-top: 1px solid rgba(112,86,60,.15); }
+.movement-options legend { margin-bottom: 12px; color: #6e5135; font-size: 13px; font-weight: 700; }
+.movement-options label { display: flex; gap: 8px; align-items: center; color: #5f554a; font-size: 14px; cursor: pointer; }
+
+.mobile-dpad { display: none; }
+@media (pointer: coarse) {
+  body.museum-ready .mobile-dpad {
+    position: fixed; z-index: 6; left: max(16px, env(safe-area-inset-left)); bottom: max(18px, env(safe-area-inset-bottom));
+    display: grid; grid-template: repeat(2, 52px) / repeat(3, 52px); gap: 4px; pointer-events: auto;
+    user-select: none; touch-action: none;
+  }
+  .dpad-button {
+    display: grid; place-items: center; width: 52px; height: 52px; padding: 0; border: 1px solid rgba(255,255,255,.72);
+    border-radius: 13px; color: rgba(255,255,255,.94); background: rgba(42,35,28,.58); box-shadow: 0 6px 18px rgba(20,15,10,.18);
+    font: 16px/1 sans-serif; backdrop-filter: blur(8px); -webkit-tap-highlight-color: transparent; touch-action: none;
+  }
+  .dpad-button.is-active { background: rgba(136,107,67,.9); transform: scale(.94); }
+  .dpad-up { grid-area: 1 / 2; }
+  .dpad-left { grid-area: 2 / 1; }
+  .dpad-down { grid-area: 2 / 2; }
+  .dpad-right { grid-area: 2 / 3; }
+  .help-panel:not(.is-hidden) ~ .mobile-dpad,
+  .settings-panel:not(.is-hidden) ~ .mobile-dpad { pointer-events: none; opacity: .25; }
+}
+
+.vr-settings-source {
+  position: fixed; left: -10000px; top: 0; width: 280px; min-height: 190px; padding: 22px;
+  color: #29231d; background: #f4eee6; border: 2px solid #886b43; border-radius: 16px;
+  font: 16px/1.4 "Segoe UI", sans-serif;
+}
+.vr-settings-source p { margin: 0; color: #886b43; font-size: 12px; letter-spacing: .18em; font-weight: 700; }
+.vr-settings-source h2 { margin: 8px 0 16px; font: 26px Georgia, serif; }
+.vr-settings-source label { display: block; margin: 10px 0; }
+.vr-settings-source input { width: 18px; height: 18px; margin-right: 8px; accent-color: #886b43; }
 
 .toast {
   position: fixed; z-index: 8; left: 50%; bottom: 28px; transform: translateX(-50%);
@@ -117,4 +155,5 @@ a-scene { width: 100% !important; height: 100% !important; }
   .museum-header { top: 12px; left: 12px; right: 12px; justify-content: space-between; }
   .museum-header h1 { font-size: 17px; }
   .help-panel { top: 12px; right: 12px; }
+  .settings-panel { top: 12px; right: 12px; }
 }
