@@ -6,7 +6,9 @@ import {
   hasExitedElevator,
   isDoorwayBlocked,
   isInsideElevatorTrigger,
-  isPointWalkable
+  isPointWalkable,
+  transferElevatorPosition,
+  transferElevatorYaw
 } from '../src/museum/navigation.js';
 
 describe('museum collision navigation', () => {
@@ -55,6 +57,20 @@ describe('museum collision navigation', () => {
     expect(hasExitedElevator(eastPort, { x: 9.75, z: 3 })).toBe(true);
     expect(hasExitedElevator(eastPort, { x: 9.75, z: 8 })).toBe(true);
     expect(hasExitedElevator(eastPort, { x: 11.2, z: 3 })).toBe(false);
+  });
+
+  it('keeps an offset on the same visual side of oriented endpoint cabins', () => {
+    const source = { x: 10, z: 3, outward: { x: 1, z: 0 } };
+    const target = { x: -4, z: 8, outward: { x: 0, z: -1 } };
+
+    expect(transferElevatorPosition(source, target, { x: 11.9, z: 3.45 })).toEqual({ x: -4.45, z: 7 });
+  });
+
+  it('rotates the rig with the cabin so a door-facing visitor still faces the door', () => {
+    const source = { yaw: 0 };
+    const target = { yaw: 180 };
+
+    expect(transferElevatorYaw(source, target, 180)).toBe(360);
   });
 
   it('overlaps the inset room floor across an elevator threshold', () => {

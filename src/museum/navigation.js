@@ -56,6 +56,28 @@ export function elevatorCabinPosition(port, depth = 1.65) {
   };
 }
 
+// Transfer the player's cabin-relative position to the other endpoint. This
+// avoids snapping them to the cabin centre when an elevator arrives.
+export function transferElevatorPosition(fromPort, toPort, position) {
+  const dx = position.x - fromPort.x;
+  const dz = position.z - fromPort.z;
+  // The two endpoint cabins are built from opposing doors. Mirror around the
+  // cabin centre before applying the destination's axes, otherwise an offset
+  // at one corner arrives at the diagonally opposite corner.
+  const depth = 2.9 - (dx * fromPort.outward.x + dz * fromPort.outward.z);
+  const lateral = -(dx * -fromPort.outward.z + dz * fromPort.outward.x);
+  return {
+    x: toPort.x + toPort.outward.x * depth + -toPort.outward.z * lateral,
+    z: toPort.z + toPort.outward.z * depth + toPort.outward.x * lateral
+  };
+}
+
+export function transferElevatorYaw(fromPort, toPort, yaw) {
+  // Ports use A-Frame yaw: 0 points north (-Z). Rotate the rig by the same
+  // amount as the cabin so a player facing the door keeps facing the door.
+  return yaw + toPort.yaw - fromPort.yaw;
+}
+
 export function elevatorWalkRegion(port, connectionId, roomId) {
   const eastWest = Math.abs(port.outward.x) > .5;
   return {

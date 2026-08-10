@@ -13,12 +13,13 @@ import { buildElevatorCabin } from './models/elevator.js';
 import { buildPhotoMount } from './models/exhibit.js';
 import {
   constrainWalkableMovement,
-  elevatorCabinPosition,
   elevatorWalkRegion,
   hasExitedElevator,
   isDoorwayBlocked,
   isInsideElevatorTrigger,
-  isPointWalkable
+  isPointWalkable,
+  transferElevatorPosition,
+  transferElevatorYaw
 } from './navigation.js';
 
 function frameSlots(template, connectedDoorIds) {
@@ -557,13 +558,13 @@ export class MuseumScene {
         const port = worldPort(room, placement, endpoint.doorId);
         if (!isInsideElevatorTrigger(port, position)) continue;
         const target = view.connection.from.roomId === endpoint.roomId ? view.connection.to : view.connection.from;
-        this.runElevator(view, target);
+        this.runElevator(view, endpoint, target);
         return;
       }
     }
   }
 
-  async runElevator(view, target) {
+  async runElevator(view, source, target) {
     view.elevator.phase = 'travelling';
     view.loading = true;
     this.setElevatorDoor(view, null);
@@ -572,9 +573,16 @@ export class MuseumScene {
     const targetRoom = this.roomConfig(target.roomId);
     const targetPlacement = this.layout.placements.get(target.roomId);
     const targetPort = worldPort(targetRoom, targetPlacement, target.doorId);
-    const arrival = elevatorCabinPosition(targetPort);
+    const sourceRoom = this.roomConfig(source.roomId);
+    const sourcePort = worldPort(sourceRoom, this.layout.placements.get(source.roomId), source.doorId);
+    const arrival = transferElevatorPosition(sourcePort, targetPort, this.rig.object3D.position);
     this.rig.object3D.position.set(arrival.x, 0, arrival.z);
-    this.faceRigAt(targetPort.x, targetPort.z);
+    const rotation = this.rig.getAttribute('rotation');
+    this.rig.setAttribute('rotation', {
+      x: rotation.x,
+      y: transferElevatorYaw(sourcePort, targetPort, rotation.y),
+      z: rotation.z
+    });
     const constraint = this.rig.components?.['museum-walk-constraint'];
     constraint?.lastValid?.copy(this.rig.object3D.position);
     this.ui.toast(`已抵达“${targetRoom.title}”`, 1800);
