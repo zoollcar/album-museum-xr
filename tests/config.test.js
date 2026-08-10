@@ -27,6 +27,16 @@ describe('museum config validation', () => {
     expect(validateMuseumConfig(themed).valid).toBe(false);
   });
 
+  it('accepts compatible configurable door styles', () => {
+    const config = museumConfig({
+      rooms: [{ ...room('room-a'), doorStyle: 'sage-panel', elevatorDoorStyle: 'elevator-bronze' }],
+      connections: [{ from: 'lobby.door-1', to: 'room-a.door-1', elevatorDoorStyle: 'elevator-dark' }]
+    });
+    expect(validateMuseumConfig(config).valid).toBe(true);
+    config.rooms[0].elevatorDoorStyle = 'classic-oak';
+    expect(validateMuseumConfig(config).valid).toBe(false);
+  });
+
   it('rejects illegal and reused door numbers', () => {
     const config = museumConfig({
       rooms: [room('room-a'), room('room-b')],

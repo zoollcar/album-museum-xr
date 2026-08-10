@@ -13,14 +13,43 @@ function overlaps(a, b, padding = 1.2) {
   );
 }
 
-function roomRect(room, x, z) {
+function normalizeRotation(rotation) {
+  return ((rotation % 360) + 360) % 360;
+}
+
+function rotateXZ(x, z, rotation = 0) {
+  const radians = rotation * Math.PI / 180;
+  const cosine = Math.cos(radians);
+  const sine = Math.sin(radians);
+  return {
+    x: x * cosine + z * sine,
+    z: -x * sine + z * cosine
+  };
+}
+
+function roomRect(room, x, z, rotation = 0) {
   const template = getTemplate(room.template);
-  return { id: room.id, x, z, width: template.width, depth: template.depth };
+  const quarterTurn = normalizeRotation(rotation) % 180 !== 0;
+  return {
+    id: room.id,
+    x,
+    z,
+    width: quarterTurn ? template.depth : template.width,
+    depth: quarterTurn ? template.width : template.depth
+  };
 }
 
 function worldPort(room, placement, doorId) {
   const port = getDoorPort(room, doorId);
-  return { x: placement.x + port.x, z: placement.z + port.z, yaw: port.yaw, outward: port.outward };
+  const offset = rotateXZ(port.x, port.z, placement.rotation);
+  const outward = rotateXZ(port.outward.x, port.outward.z, placement.rotation);
+  return {
+    ...port,
+    x: placement.x + offset.x,
+    z: placement.z + offset.z,
+    yaw: normalizeRotation(port.yaw - placement.rotation),
+    outward
+  };
 }
 
 function endpointDistance(a, b) {
@@ -30,15 +59,17 @@ function endpointDistance(a, b) {
 function candidatePlacement(sourceRoom, sourcePlacement, sourceDoor, targetRoom, targetDoor, multiplier = 1) {
   const sourcePort = worldPort(sourceRoom, sourcePlacement, sourceDoor);
   const targetPort = getDoorPort(targetRoom, targetDoor);
-  const sourceTemplate = getTemplate(sourceRoom.template);
-  const targetTemplate = getTemplate(targetRoom.template);
-  const strideX = sourceTemplate.width / 2 + targetTemplate.width / 2 + ROOM_GAP * multiplier;
-  const strideZ = sourceTemplate.depth / 2 + targetTemplate.depth / 2 + ROOM_GAP * multiplier;
-  const stride = sourcePort.outward.x ? strideX : strideZ;
+  // Connected doors must face each other. A room rotation changes both the
+  // door offset and its outward normal, so align the rotated target port with
+  // a point just outside the source port instead of translating an unrotated
+  // room by its dimensions.
+  const rotation = normalizeRotation(targetPort.yaw - sourcePort.yaw - 180);
+  const targetOffset = rotateXZ(targetPort.x, targetPort.z, rotation);
+  const gap = ROOM_GAP * multiplier;
   return {
-    x: sourcePlacement.x + sourcePort.outward.x * stride - targetPort.x,
-    z: sourcePlacement.z + sourcePort.outward.z * stride - targetPort.z,
-    rotation: 0
+    x: sourcePort.x + sourcePort.outward.x * gap - targetOffset.x,
+    z: sourcePort.z + sourcePort.outward.z * gap - targetOffset.z,
+    rotation
   };
 }
 
@@ -57,7 +88,14 @@ export function buildMuseumLayout(config) {
   const connections = config.connections.map((connection, index) => {
     const from = parseEndpoint(connection.from);
     const to = parseEndpoint(connection.to);
-    const item = { id: `connection-${index + 1}`, from, to, kind: 'pending', path: [] };
+    const item = {
+      id: `connection-${index + 1}`,
+      from,
+      to,
+      kind: 'pending',
+      path: [],
+      elevatorDoorStyle: connection.elevatorDoorStyle || null
+    };
     adjacency.get(from.roomId).push({ connection: item, other: to });
     adjacency.get(to.roomId).push({ connection: item, other: from });
     return item;
@@ -75,8 +113,8 @@ export function buildMuseumLayout(config) {
       let candidate = null;
       for (let multiplier = 1; multiplier <= 3; multiplier += 1) {
         const next = candidatePlacement(sourceRoom, sourcePlacement, sourceEndpoint.doorId, targetRoom, edge.other.doorId, multiplier);
-        const rect = roomRect(targetRoom, next.x, next.z);
-        if (![...placements].some(([id, placed]) => overlaps(rect, roomRect(rooms.get(id), placed.x, placed.z)))) {
+        const rect = roomRect(targetRoom, next.x, next.z, next.rotation);
+        if (![...placements].some(([id, placed]) => overlaps(rect, roomRect(rooms.get(id), placed.x, placed.z, placed.rotation)))) {
           candidate = next;
           break;
         }
@@ -106,7 +144,8 @@ export function buildMuseumLayout(config) {
     const corridorHitsRoom = path.some((point) => roomList.some((room) => {
       if (room.id === fromRoom.id || room.id === toRoom.id) return false;
       const p = placements.get(room.id);
-      return Math.abs(point.x - p.x) < getTemplate(room.template).width / 2 && Math.abs(point.z - p.z) < getTemplate(room.template).depth / 2;
+      const rect = roomRect(room, p.x, p.z, p.rotation);
+      return Math.abs(point.x - p.x) < rect.width / 2 && Math.abs(point.z - p.z) < rect.depth / 2;
     }));
     connection.kind = fromPlacement.forcedElevator || toPlacement.forcedElevator || distance > MAX_CORRIDOR || corridorHitsRoom
       ? 'elevator'
@@ -118,4 +157,4 @@ export function buildMuseumLayout(config) {
   return { rooms, placements, connections, adjacency };
 }
 
-export { MAX_CORRIDOR, overlaps, worldPort };
+export { MAX_CORRIDOR, overlaps, roomRect, rotateXZ, worldPort };

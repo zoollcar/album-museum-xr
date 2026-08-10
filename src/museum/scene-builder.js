@@ -1,6 +1,6 @@
 import { getDoorPort, getTemplate } from './templates.js';
 import { ProgressiveTextureManager } from './progressive-textures.js';
-import { worldPort } from './layout.js';
+import { roomRect, rotateXZ, worldPort } from './layout.js';
 import { box, entity, disposeTree, COLORS } from './models/primitives.js';
 import { getRoomTheme, surfaceMaterial } from './themes.js';
 import { textPlane } from './models/signage.js';
@@ -8,6 +8,7 @@ import { buildWall, buildSkylight, buildTrackLights } from './models/room-shell.
 import { buildBench, buildDecorCollection, buildPlant } from './models/furniture.js';
 import { buildAdditionalDecor } from './models/decorations.js';
 import { buildDoorModel } from './models/door.js';
+import { resolveDoorStyle } from './models/door-styles.js';
 import { buildElevatorCabin } from './models/elevator.js';
 import { buildPhotoMount } from './models/exhibit.js';
 import {
@@ -76,7 +77,8 @@ export class MuseumScene {
     const loaded = this.loadedRooms.get(this.currentRoomId);
     if (this.spawnRequest) await this.applySpawnRequest(this.spawnRequest);
     else {
-      this.rig.object3D.position.set(loaded.placement.x, 0, loaded.placement.z + loaded.template.depth / 2 - 1.75);
+      const spawn = this.localToWorld(loaded.placement, 0, loaded.template.depth / 2 - 1.75);
+      this.rig.object3D.position.set(spawn.x, 0, spawn.z);
     }
     this.ui.setRoom(this.config.museum.title, this.currentRoomId === this.config.museum.lobby.id ? '大厅' : loaded.room.title);
     this.ready = true;
@@ -97,13 +99,18 @@ export class MuseumScene {
     const room = this.roomConfig(roomId);
     const template = getTemplate(room.template);
     const placement = this.layout.placements.get(roomId);
-    const group = entity('a-entity', { id: `room-${roomId}`, position: `${placement.x} 0 ${placement.z}` }, this.root);
+    const group = entity('a-entity', {
+      id: `room-${roomId}`,
+      position: `${placement.x} 0 ${placement.z}`,
+      rotation: `0 ${placement.rotation || 0} 0`
+    }, this.root);
     group.dataset.roomId = roomId;
     const connectedDoorIds = this.connectedDoorIds(roomId);
     const theme = getRoomTheme(room);
+    const defaultSpawn = this.localToWorld(placement, 0, template.depth / 2 - 1.75);
     this.registerSpawnAnchor(roomId, null, {
-      x: placement.x,
-      z: placement.z + template.depth / 2 - 1.75,
+      x: defaultSpawn.x,
+      z: defaultSpawn.z,
       targetX: placement.x,
       targetZ: placement.z
     });
@@ -122,10 +129,11 @@ export class MuseumScene {
     buildBench(group, template);
     buildDecorCollection(group, template, theme.decor);
     buildAdditionalDecor(group, template, theme.decor);
+    const bench = this.localToWorld(placement, 0, template.kind === 'lobby' ? 2.2 : 0);
     this.registerSpawnAnchor(roomId, 'bench', {
-      x: placement.x,
-      z: placement.z + (template.kind === 'lobby' ? 2.2 : 0),
-      approach: { x: 0, z: 1 }
+      x: bench.x,
+      z: bench.z,
+      approach: rotateXZ(0, 1, placement.rotation)
     });
 
     if (template.kind === 'lobby') this.buildLobbyContent(group, room, template);
@@ -182,13 +190,16 @@ export class MuseumScene {
       if (!slot) return;
       slot.assigned = true;
       const { holder, frame, plane } = buildPhotoMount(group, slot);
+      const placement = this.layout.placements.get(room.id);
+      const photoPosition = this.localToWorld(placement, slot.x, slot.z);
       this.registerSpawnAnchor(room.id, `photo-${index + 1}`, {
-        x: this.layout.placements.get(room.id).x + slot.x,
-        z: this.layout.placements.get(room.id).z + slot.z,
-        approach: {
-          x: slot.wall === 'west' ? 1 : slot.wall === 'east' ? -1 : 0,
-          z: slot.wall === 'north' ? 1 : slot.wall === 'south' ? -1 : 0
-        }
+        x: photoPosition.x,
+        z: photoPosition.z,
+        approach: rotateXZ(
+          slot.wall === 'west' ? 1 : slot.wall === 'east' ? -1 : 0,
+          slot.wall === 'north' ? 1 : slot.wall === 'south' ? -1 : 0,
+          placement.rotation
+        )
       });
       this.textureManager.register({ id: `${room.id}-photo-${index}`, roomId: room.id, plane, frame, sources: photo.sources });
       if (hasCaption(photo)) {
@@ -219,7 +230,8 @@ export class MuseumScene {
       const endpoint = connection.from.roomId === room.id ? connection.from : connection.to;
       const destination = this.roomConfig(edge.other.roomId);
       const port = getDoorPort(room, endpoint.doorId);
-      const { hinge, panel } = buildDoorModel({ parent: group, port, endpoint, destination, connection, onClick: () => this.toggleDoor(connection.id, room.id) });
+      const styleId = connection.kind === 'elevator' ? this.elevatorStyleId(connection) : null;
+      const doorModel = buildDoorModel({ parent: group, port, endpoint, destination, connection, room, styleId, onClick: () => this.toggleDoor(connection.id, room.id) });
       if (!this.connectionViews.has(connection.id)) {
         this.connectionViews.set(connection.id, {
           connection,
@@ -231,19 +243,28 @@ export class MuseumScene {
         });
       }
       const doorWorldPort = worldPort(room, this.layout.placements.get(room.id), endpoint.doorId);
-      this.connectionViews.get(connection.id).doors.push({ roomId: room.id, hinge, panel, port, worldPort: doorWorldPort });
+      this.connectionViews.get(connection.id).doors.push({ roomId: room.id, ...doorModel, port, worldPort: doorWorldPort });
       this.registerSpawnAnchor(room.id, endpoint.doorId, { kind: 'door', connectionId: connection.id, port: doorWorldPort });
     }
+  }
+
+  elevatorStyleId(connection) {
+    const homeRoom = this.roomConfig(connection.from.roomId);
+    return resolveDoorStyle(homeRoom, 'elevator', connection.elevatorDoorStyle).id;
   }
 
   registerSpawnAnchor(roomId, anchorId, anchor) {
     this.spawnAnchors.set(anchorId ? `${roomId}.${anchorId}` : roomId, { roomId, ...anchor });
   }
 
+  localToWorld(placement, localX, localZ) {
+    const offset = rotateXZ(localX, localZ, placement.rotation);
+    return { x: placement.x + offset.x, z: placement.z + offset.z };
+  }
+
   registerItemSpawn(roomId, anchorId, localX, localZ) {
     const placement = this.layout.placements.get(roomId);
-    const x = placement.x + localX;
-    const z = placement.z + localZ;
+    const { x, z } = this.localToWorld(placement, localX, localZ);
     const towardCenterX = placement.x - x;
     const towardCenterZ = placement.z - z;
     const length = Math.hypot(towardCenterX, towardCenterZ) || 1;
@@ -361,6 +382,15 @@ export class MuseumScene {
   }
 
   animateDoor(door, open, immediate = false) {
+    if (door.motion === 'sliding') {
+      for (const panel of door.panels) {
+        panel.element.removeAttribute('animation__door');
+        const position = open ? panel.open : panel.closed;
+        if (immediate) panel.element.setAttribute('position', position);
+        else panel.element.setAttribute('animation__door', `property: position; to: ${position}; dur: 620; easing: easeInOutCubic`);
+      }
+      return;
+    }
     door.hinge.removeAttribute('animation__door');
     if (immediate) door.hinge.setAttribute('rotation', `0 ${open ? 104 : 0} 0`);
     else door.hinge.setAttribute('animation__door', `property: rotation; to: 0 ${open ? 104 : 0} 0; dur: 760; easing: easeInOutCubic`);
@@ -409,17 +439,19 @@ export class MuseumScene {
   }
 
   buildElevator(parent, connection) {
+    const styleId = this.elevatorStyleId(connection);
     for (const endpoint of [connection.from, connection.to]) {
       const room = this.roomConfig(endpoint.roomId);
       const placement = this.layout.placements.get(endpoint.roomId);
       const port = worldPort(room, placement, endpoint.doorId);
-      const cabin = buildElevatorCabin({ parent, port, roomTitle: this.roomConfig(endpoint.roomId).title });
+      const cabin = buildElevatorCabin({ parent, port, room, styleId });
       cabin.dataset.endpoint = endpoint.roomId;
     }
   }
 
   addRoomRegion(roomId, placement, template) {
-    this.walkRegions.push({ type: 'room', roomId, x: placement.x, z: placement.z, width: template.width - .45, depth: template.depth - .45 });
+    const rect = roomRect({ id: roomId, template: template.id }, placement.x, placement.z, placement.rotation);
+    this.walkRegions.push({ type: 'room', roomId, x: placement.x, z: placement.z, width: rect.width - .45, depth: rect.depth - .45 });
   }
 
   registerColliderTree(owner, root) {
@@ -496,9 +528,10 @@ export class MuseumScene {
 
   detectCurrentRoom() {
     const position = this.rig.object3D.position;
-    return [...this.loadedRooms.values()].find(({ placement, template }) =>
-      Math.abs(position.x - placement.x) <= template.width / 2 - .25 && Math.abs(position.z - placement.z) <= template.depth / 2 - .25
-    )?.room.id || this.currentRoomId;
+    return [...this.loadedRooms.values()].find(({ room, placement }) => {
+      const rect = roomRect(room, placement.x, placement.z, placement.rotation);
+      return Math.abs(position.x - placement.x) <= rect.width / 2 - .25 && Math.abs(position.z - placement.z) <= rect.depth / 2 - .25;
+    })?.room.id || this.currentRoomId;
   }
 
   handleElevators(now) {

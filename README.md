@@ -107,11 +107,15 @@ npm run validate:config -- path/to/another.json
 
 房间可选配置 `theme`：`classic`、`botanical`、`art-deco` 或 `terrazzo`。主题会同时切换墙纸、地板、踢脚线和程序化 3D 装饰；省略时使用 `classic`。
 
+门也和装饰品一样由样式目录生成。普通门可用房间的 `doorStyle` 选择 `classic-oak`、`sage-panel`、`deco-walnut`、`modern-ash`；电梯门可用 `elevatorDoorStyle` 选择 `elevator-brushed`、`elevator-bronze`、`elevator-dark`。电梯样式也可写在单条 `connections` 配置上，并优先于房间配置；同一连接的两端入口门和轿厢门始终共用一个样式，不会因目标房间主题不同而变色。省略时按电梯起点房间的 `theme` 自动搭配。电梯始终使用金属双开滑门，普通房间连接使用有门框、面板和把手的平开门。
+
 ```json
 {
   "id": "botanical-archive",
   "template": "gallery-medium",
   "theme": "botanical",
+  "doorStyle": "sage-panel",
+  "elevatorDoorStyle": "elevator-bronze",
   "title": "植物与远方",
   "blocks": []
 }
@@ -125,7 +129,7 @@ npm run validate:config -- path/to/another.json
 
 可复用模型按类型拆分在 `src/museum/models/`：房间外壳、门、电梯、展框、家具和博物馆标识各自独立，便于单独调整几何、材质和性能。
 
-- 实体墙、走廊墙、电梯侧壁和后壁使用静态碰撞体。
+- 实体墙、走廊墙和电梯侧壁使用静态碰撞体；轿厢对面从一开始就是关闭的电梯门，不再用墙体临时替换。
 - 关闭的门会动态阻挡通行，开门后才解除；房间回收时先同步关门，再释放连接空间。
 - 长椅和绿植花盆等落地家具参与碰撞；墙挂照片和文字牌不额外占用行走空间。
 - 左上角参观提示仅用于桌面端，进入 WebXR 后自动隐藏。

@@ -21,7 +21,9 @@ export const museumSchema = {
           properties: {
             id: { type: 'string', pattern: '^[a-zA-Z][a-zA-Z0-9_-]*$' },
             template: { const: 'lobby-atrium' },
-            theme: { enum: ['classic', 'botanical', 'art-deco', 'terrazzo'] }
+            theme: { enum: ['classic', 'botanical', 'art-deco', 'terrazzo'] },
+            doorStyle: { enum: ['classic-oak', 'sage-panel', 'deco-walnut', 'modern-ash'] },
+            elevatorDoorStyle: { enum: ['elevator-brushed', 'elevator-bronze', 'elevator-dark'] }
           }
         }
       }
@@ -38,7 +40,8 @@ export const museumSchema = {
         required: ['from', 'to'],
         properties: {
           from: { type: 'string', pattern: '^[a-zA-Z][a-zA-Z0-9_-]*\\.door-[1-9][0-9]*$' },
-          to: { type: 'string', pattern: '^[a-zA-Z][a-zA-Z0-9_-]*\\.door-[1-9][0-9]*$' }
+          to: { type: 'string', pattern: '^[a-zA-Z][a-zA-Z0-9_-]*\\.door-[1-9][0-9]*$' },
+          elevatorDoorStyle: { enum: ['elevator-brushed', 'elevator-bronze', 'elevator-dark'] }
         }
       }
     }
@@ -85,6 +88,8 @@ export const museumSchema = {
         id: { type: 'string', pattern: '^[a-zA-Z][a-zA-Z0-9_-]*$' },
         template: { enum: ['gallery-small', 'gallery-medium', 'gallery-large'] },
         theme: { enum: ['classic', 'botanical', 'art-deco', 'terrazzo'] },
+        doorStyle: { enum: ['classic-oak', 'sage-panel', 'deco-walnut', 'modern-ash'] },
+        elevatorDoorStyle: { enum: ['elevator-brushed', 'elevator-bronze', 'elevator-dark'] },
         title: { type: 'string', minLength: 1 },
         intro: { type: 'string' },
         blocks: { type: 'array', items: { $ref: '#/$defs/block' } }
