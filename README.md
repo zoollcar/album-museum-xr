@@ -103,6 +103,19 @@ npm run validate:config -- path/to/another.json
 
 房间不需要坐标。布局器优先直接拼接，其次生成直廊或转角廊；距离超过 24 米或发生空间冲突时自动改用电梯。
 
+### 背景音乐
+
+在 `museum.backgroundMusic` 配置全馆默认音乐，或在 `museum.lobby`、任一展厅上用同名字段覆盖。`url` 必填，`volume` 可选且范围为 `0` 到 `1`；省略音量时使用 `0.35`。音乐会循环播放，浏览器限制自动播放时会在参观者下一次交互后开始。
+
+```json
+{
+  "backgroundMusic": {
+    "url": "https://media.example.com/museum-ambient.mp3",
+    "volume": 0.35
+  }
+}
+```
+
 ### 房间主题与材质
 
 房间可选配置 `theme`：`classic`、`botanical`、`art-deco` 或 `terrazzo`。主题会同时切换墙纸、地板、踢脚线和程序化 3D 装饰；省略时使用 `classic`。

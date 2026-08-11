@@ -147,7 +147,10 @@ async function startMuseum(configUrl) {
       document.body.classList.remove('is-vr');
       document.getElementById('crosshair').classList.remove('is-hidden');
     });
-    scene.addEventListener('remove', () => movementMode.dispose(), { once: true });
+    scene.addEventListener('remove', () => {
+      movementMode.dispose();
+      app.dispose();
+    }, { once: true });
   } catch (error) {
     console.error(error);
     ui.fail([error.message || '未知错误']);

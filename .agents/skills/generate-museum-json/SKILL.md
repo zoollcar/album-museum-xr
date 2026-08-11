@@ -54,6 +54,7 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 | `subtitle` | 可选字符串 |
 | `intro` | 可选字符串 |
 | `heroImage` | 可选，使用“图片源”格式 |
+| `backgroundMusic` | 可选，全馆默认背景音乐 |
 | `lobby` | 必填，大厅对象 |
 
 `lobby`：
@@ -65,6 +66,7 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 | `theme` | 可选主题 |
 | `doorStyle` | 可选普通门样式 |
 | `elevatorDoorStyle` | 可选电梯门样式 |
+| `backgroundMusic` | 可选；仅在大厅覆盖全馆默认背景音乐 |
 
 大厅有 `door-1` 至 `door-6` 六个门位。主视觉 `heroImage` 不计入展厅照片。
 
@@ -81,6 +83,7 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 | `theme` | 可选主题 |
 | `doorStyle` | 可选普通门样式 |
 | `elevatorDoorStyle` | 可选电梯门样式 |
+| `backgroundMusic` | 可选；仅在该展厅覆盖全馆默认背景音乐 |
 | `blocks` | 必填，板块数组 |
 
 每个板块只允许 `title`（可选字符串）、`description`（可选字符串）和 `photos`（必填数组）。板块用于策展分组，不配置位置。
@@ -107,6 +110,23 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 - 优先提供三档图片 URL；缺少 `medium` 或 `low` 时应用会回退到原图，增加下载流量。
 - 写有事实含义的 `location`、`date`、`description` 前先确认来源；无法确认时省略。
 - 为无障碍体验尽量提供准确的 `alt`，但不要用文件名冒充描述。
+
+## 背景音乐
+
+`museum.backgroundMusic` 为全馆默认音乐；`museum.lobby.backgroundMusic` 或任一 `rooms[]` 的 `backgroundMusic` 会在参观者进入该房间时覆盖默认音乐。离开独特音乐房间后会恢复全馆默认音乐。
+
+```json
+{
+  "url": "https://media.example.com/museum-ambient.mp3",
+  "volume": 0.35
+}
+```
+
+- `url` 必填，必须是非空字符串。远程音频须允许浏览器直接加载；部署环境应使用 HTTPS。
+- `volume` 可选，必须是 `0` 到 `1` 的数字；省略时使用 `0.35`。
+- 音乐会循环播放。浏览器若限制自动播放，应用会在参观者下一次点击、按键或 XR 交互时开始播放。
+- 房间未配置 `backgroundMusic` 时继承全馆默认音乐；完全不配置则静音。
+- 使用有明确授权的音乐，并自行保存作者、来源和许可证记录。不要把许可证不明的链接写进配置。
 
 ## 模板与容量
 
@@ -152,5 +172,5 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 - 确认板块数、照片数和门号没有超过模板容量。
 - 确认没有重复 ID、重复门位、自连接或孤立展厅。
 - 确认每张照片有 `sources.original`，远程图片服务允许浏览器跨域读取。
+- 确认背景音乐 URL 可公开访问、使用 HTTPS，并且音频授权适合项目用途。
 - 运行 `scripts/check-museum-json.mjs` 并修复全部错误；不要仅凭目测宣布完成。
-

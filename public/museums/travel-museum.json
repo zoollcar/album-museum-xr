@@ -9,6 +9,10 @@
       "medium": "https://album-museum-xr-img.hitorisama.org/demo/alpine-lake-medium.webp",
       "low": "https://album-museum-xr-img.hitorisama.org/demo/alpine-lake-low.webp"
     },
+    "backgroundMusic": {
+      "url": "https://album-museum-xr-img.hitorisama.org/demo/audio/contemplation.mp3",
+      "volume": 0.3
+    },
     "lobby": {
       "id": "lobby",
       "template": "lobby-atrium"
@@ -109,6 +113,10 @@
       "template": "gallery-large",
       "theme": "art-deco",
       "title": "城市微光",
+      "backgroundMusic": {
+        "url": "https://album-museum-xr-img.hitorisama.org/demo/audio/mindstream.mp3",
+        "volume": 0.28
+      },
       "blocks": [
         {
           "title": "东京雨夜",

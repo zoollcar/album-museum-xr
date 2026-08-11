@@ -11,6 +11,7 @@ import { buildDoorModel } from './models/door.js';
 import { resolveDoorStyle } from './models/door-styles.js';
 import { buildElevatorCabin } from './models/elevator.js';
 import { buildPhotoMount } from './models/exhibit.js';
+import { BackgroundMusicManager, backgroundMusicForRoom } from './background-music.js';
 import {
   constrainWalkableMovement,
   elevatorWalkRegion,
@@ -70,6 +71,10 @@ export class MuseumScene {
       camera: head.object3D,
       onError: (message) => this.ui.toast(message, 4200)
     });
+    this.musicManager = new BackgroundMusicManager({
+      unlockTargets: [window, scene],
+      onError: (message) => this.ui.toast(message, 4200)
+    });
   }
 
   async initialize() {
@@ -82,6 +87,7 @@ export class MuseumScene {
       this.rig.object3D.position.set(spawn.x, 0, spawn.z);
     }
     this.ui.setRoom(this.config.museum.title, this.currentRoomId === this.config.museum.lobby.id ? '大厅' : loaded.room.title);
+    this.musicManager.setTrack(backgroundMusicForRoom(this.config, this.currentRoomId));
     this.ready = true;
     this.clock = window.setInterval(() => this.tick(), 180);
   }
@@ -637,6 +643,7 @@ export class MuseumScene {
       this.currentRoomId = roomId;
       const room = this.roomConfig(roomId);
       this.ui.setRoom(this.config.museum.title, roomId === this.config.museum.lobby.id ? '大厅' : room.title);
+      this.musicManager.setTrack(backgroundMusicForRoom(this.config, roomId));
       this.unloadDistantRooms();
     }
   }
@@ -644,5 +651,6 @@ export class MuseumScene {
   dispose() {
     clearInterval(this.clock);
     this.textureManager.dispose();
+    this.musicManager.dispose();
   }
 }

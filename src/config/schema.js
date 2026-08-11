@@ -14,6 +14,7 @@ export const museumSchema = {
         subtitle: { type: 'string' },
         intro: { type: 'string' },
         heroImage: { $ref: '#/$defs/imageSources' },
+        backgroundMusic: { $ref: '#/$defs/backgroundMusic' },
         lobby: {
           type: 'object',
           additionalProperties: false,
@@ -23,7 +24,8 @@ export const museumSchema = {
             template: { const: 'lobby-atrium' },
             theme: { enum: ['classic', 'botanical', 'art-deco', 'terrazzo'] },
             doorStyle: { enum: ['classic-oak', 'sage-panel', 'deco-walnut', 'modern-ash'] },
-            elevatorDoorStyle: { enum: ['elevator-brushed', 'elevator-bronze', 'elevator-dark'] }
+            elevatorDoorStyle: { enum: ['elevator-brushed', 'elevator-bronze', 'elevator-dark'] },
+            backgroundMusic: { $ref: '#/$defs/backgroundMusic' }
           }
         }
       }
@@ -47,6 +49,15 @@ export const museumSchema = {
     }
   },
   $defs: {
+    backgroundMusic: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['url'],
+      properties: {
+        url: { type: 'string', minLength: 1 },
+        volume: { type: 'number', minimum: 0, maximum: 1 }
+      }
+    },
     imageSources: {
       type: 'object',
       additionalProperties: false,
@@ -90,6 +101,7 @@ export const museumSchema = {
         theme: { enum: ['classic', 'botanical', 'art-deco', 'terrazzo'] },
         doorStyle: { enum: ['classic-oak', 'sage-panel', 'deco-walnut', 'modern-ash'] },
         elevatorDoorStyle: { enum: ['elevator-brushed', 'elevator-bronze', 'elevator-dark'] },
+        backgroundMusic: { $ref: '#/$defs/backgroundMusic' },
         title: { type: 'string', minLength: 1 },
         intro: { type: 'string' },
         blocks: { type: 'array', items: { $ref: '#/$defs/block' } }

@@ -68,6 +68,18 @@ function optionalEnum(object, key, values, path, errors) {
   }
 }
 
+function validateBackgroundMusic(value, path, errors) {
+  if (!exactKeys(value, ['url', 'volume'], ['url'], path, errors)) return;
+  if (Object.hasOwn(value, 'url')) stringAt(value.url, `${path}.url`, errors, { nonEmpty: true });
+  if (Object.hasOwn(value, 'volume')) {
+    if (typeof value.volume !== 'number' || !Number.isFinite(value.volume)) {
+      add(errors, `${path}.volume`, '必须是数字');
+    } else if (value.volume < 0 || value.volume > 1) {
+      add(errors, `${path}.volume`, '必须在 0 到 1 之间');
+    }
+  }
+}
+
 function validateId(value, path, errors) {
   stringAt(value, path, errors);
   if (typeof value === 'string' && !ID.test(value)) {
@@ -101,27 +113,29 @@ function validateBlock(value, path, errors) {
 }
 
 function validateLobby(value, path, errors) {
-  const keys = ['id', 'template', 'theme', 'doorStyle', 'elevatorDoorStyle'];
+  const keys = ['id', 'template', 'theme', 'doorStyle', 'elevatorDoorStyle', 'backgroundMusic'];
   if (!exactKeys(value, keys, ['id', 'template'], path, errors)) return;
   if (Object.hasOwn(value, 'id')) validateId(value.id, `${path}.id`, errors);
   if (value.template !== 'lobby-atrium') add(errors, `${path}.template`, '必须是 "lobby-atrium"');
   optionalEnum(value, 'theme', THEMES, path, errors);
   optionalEnum(value, 'doorStyle', DOOR_STYLES, path, errors);
   optionalEnum(value, 'elevatorDoorStyle', ELEVATOR_STYLES, path, errors);
+  if (Object.hasOwn(value, 'backgroundMusic')) validateBackgroundMusic(value.backgroundMusic, `${path}.backgroundMusic`, errors);
 }
 
 function validateMuseum(value, path, errors) {
-  const keys = ['title', 'subtitle', 'intro', 'heroImage', 'lobby'];
+  const keys = ['title', 'subtitle', 'intro', 'heroImage', 'backgroundMusic', 'lobby'];
   if (!exactKeys(value, keys, ['title', 'lobby'], path, errors)) return;
   if (Object.hasOwn(value, 'title')) stringAt(value.title, `${path}.title`, errors, { nonEmpty: true });
   optionalString(value, 'subtitle', path, errors);
   optionalString(value, 'intro', path, errors);
   if (Object.hasOwn(value, 'heroImage')) validateImageSources(value.heroImage, `${path}.heroImage`, errors);
+  if (Object.hasOwn(value, 'backgroundMusic')) validateBackgroundMusic(value.backgroundMusic, `${path}.backgroundMusic`, errors);
   if (Object.hasOwn(value, 'lobby')) validateLobby(value.lobby, `${path}.lobby`, errors);
 }
 
 function validateRoom(value, path, errors) {
-  const keys = ['id', 'template', 'theme', 'doorStyle', 'elevatorDoorStyle', 'title', 'intro', 'blocks'];
+  const keys = ['id', 'template', 'theme', 'doorStyle', 'elevatorDoorStyle', 'backgroundMusic', 'title', 'intro', 'blocks'];
   if (!exactKeys(value, keys, ['id', 'template', 'title', 'blocks'], path, errors)) return;
   if (Object.hasOwn(value, 'id')) validateId(value.id, `${path}.id`, errors);
   if (!['gallery-small', 'gallery-medium', 'gallery-large'].includes(value.template)) {
@@ -130,6 +144,7 @@ function validateRoom(value, path, errors) {
   optionalEnum(value, 'theme', THEMES, path, errors);
   optionalEnum(value, 'doorStyle', DOOR_STYLES, path, errors);
   optionalEnum(value, 'elevatorDoorStyle', ELEVATOR_STYLES, path, errors);
+  if (Object.hasOwn(value, 'backgroundMusic')) validateBackgroundMusic(value.backgroundMusic, `${path}.backgroundMusic`, errors);
   if (Object.hasOwn(value, 'title')) stringAt(value.title, `${path}.title`, errors, { nonEmpty: true });
   optionalString(value, 'intro', path, errors);
   if (Object.hasOwn(value, 'blocks') && arrayAt(value.blocks, `${path}.blocks`, errors)) {

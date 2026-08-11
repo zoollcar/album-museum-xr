@@ -37,6 +37,23 @@ describe('museum config validation', () => {
     expect(validateMuseumConfig(config).valid).toBe(false);
   });
 
+  it('accepts global and per-room background music and validates volume', () => {
+    const config = museumConfig({
+      museum: {
+        title: '测试博物馆',
+        backgroundMusic: { url: 'https://media.example.com/global.mp3', volume: 0.25 },
+        lobby: { id: 'lobby', template: 'lobby-atrium', backgroundMusic: { url: 'https://media.example.com/lobby.mp3' } }
+      },
+      rooms: [{ ...room('room-a'), backgroundMusic: { url: 'https://media.example.com/room.mp3', volume: 1 } }]
+    });
+    expect(validateMuseumConfig(config).valid).toBe(true);
+
+    config.rooms[0].backgroundMusic.volume = 1.1;
+    expect(validateMuseumConfig(config).valid).toBe(false);
+    config.rooms[0].backgroundMusic = { url: '' };
+    expect(validateMuseumConfig(config).valid).toBe(false);
+  });
+
   it('rejects illegal and reused door numbers', () => {
     const config = museumConfig({
       rooms: [room('room-a'), room('room-b')],
