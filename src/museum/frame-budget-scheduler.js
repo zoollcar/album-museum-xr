@@ -17,9 +17,13 @@ function abortError(message = 'Task cancelled') {
 }
 
 export class FrameBudgetScheduler {
-  constructor({ now = () => performance.now(), onError = console.error } = {}) {
+  constructor({
+    now = () => performance.now(), onError = console.error, onDiagnostic = () => {}, shouldRunTask = () => true
+  } = {}) {
     this.now = now;
     this.onError = onError;
+    this.onDiagnostic = onDiagnostic;
+    this.shouldRunTask = shouldRunTask;
     this.tasks = new Map();
     this.frameSamples = [];
     this.lastFrameTime = null;
@@ -32,12 +36,26 @@ export class FrameBudgetScheduler {
       maxSliceMs: 0,
       maxSliceLabel: '',
       maxSliceTask: '',
+      cleanupSlices: 0,
+      maxCleanupSliceMs: 0,
+      maxCleanupSliceTask: '',
       lastBudgetMs: 0,
       targetFrameMs: 1000 / 72
     };
   }
 
-  enqueue({ id, owner = id, priority = 'background', steps, onProgress = null }) {
+  enqueueIncremental({ id, owner = id, priority = 'cleanup', label = '', runSlice, onProgress = null, yieldAfterStep = priority === 'cleanup' }) {
+    return this.enqueue({
+      id,
+      owner,
+      priority,
+      onProgress,
+      yieldAfterStep,
+      steps: [{ label, incremental: true, run: runSlice }]
+    });
+  }
+
+  enqueue({ id, owner = id, priority = 'background', steps, onProgress = null, yieldAfterStep = false }) {
     const existing = this.tasks.get(id);
     if (existing && !['complete', 'cancelled', 'error'].includes(existing.state)) return existing.handle;
     const normalized = [...steps].map((step) => typeof step === 'function'
@@ -61,6 +79,7 @@ export class FrameBudgetScheduler {
       state: 'queued',
       sequence: this.sequence++,
       onProgress,
+      yieldAfterStep,
       resolve: resolvePromise,
       reject: rejectPromise,
       promise,
@@ -102,7 +121,7 @@ export class FrameBudgetScheduler {
 
   nextTask() {
     return [...this.tasks.values()]
-      .filter((task) => task.state === 'queued' || task.state === 'running')
+      .filter((task) => (task.state === 'queued' || task.state === 'running') && this.shouldRunTask(task))
       .sort((a, b) => (PRIORITY[a.priority] ?? PRIORITY.background) - (PRIORITY[b.priority] ?? PRIORITY.background) || a.sequence - b.sequence)[0] || null;
   }
 
@@ -118,6 +137,7 @@ export class FrameBudgetScheduler {
       if (delta > currentTarget * 1.1) {
         this.diagnostics.lateFrames += 1;
         this.diagnostics.pauses += 1;
+        this.onDiagnostic({ type: 'late-frame', deltaMs: delta, targetFrameMs: currentTarget });
         this.lastFrameTime = frameTime;
         return 0;
       }
@@ -140,9 +160,12 @@ export class FrameBudgetScheduler {
       task.state = 'running';
       const stepStarted = this.now();
       try {
-        step.run();
-        task.index += 1;
-        task.completedWeight += Math.max(0, step.weight);
+        const sliceComplete = step.run();
+        const stepComplete = !step.incremental || sliceComplete === true;
+        if (stepComplete) {
+          task.index += 1;
+          task.completedWeight += Math.max(0, step.weight);
+        }
         ran += 1;
         this.diagnostics.slices += 1;
         const sliceMs = this.now() - stepStarted;
@@ -151,10 +174,22 @@ export class FrameBudgetScheduler {
           this.diagnostics.maxSliceLabel = step.label;
           this.diagnostics.maxSliceTask = task.id;
         }
-        const next = task.steps[task.index];
+        if (sliceMs > 4) this.onDiagnostic({
+          type: 'slow-slice', taskId: task.id, owner: task.owner, priority: task.priority,
+          label: step.label, durationMs: sliceMs
+        });
+        if (task.priority === 'cleanup') {
+          this.diagnostics.cleanupSlices += 1;
+          if (sliceMs > this.diagnostics.maxCleanupSliceMs) {
+            this.diagnostics.maxCleanupSliceMs = sliceMs;
+            this.diagnostics.maxCleanupSliceTask = task.id;
+          }
+        }
+        const next = stepComplete ? task.steps[task.index] : step;
         this.report(task, next?.label || step.label || '', task.completedWeight / task.totalWeight);
         task.sequence = this.sequence++;
         if (task.index >= task.steps.length) this.complete(task);
+        if (task.priority === 'cleanup' || task.yieldAfterStep) break;
       } catch (error) {
         task.state = 'error';
         this.tasks.delete(task.id);
@@ -181,6 +216,7 @@ export class FrameBudgetScheduler {
     return {
       ...this.diagnostics,
       queuedTasks: this.tasks.size,
+      queuedCleanupTasks: [...this.tasks.values()].filter((task) => task.priority === 'cleanup').length,
       tasks: [...this.tasks.values()].map(({ id, owner, priority, state, completedWeight, totalWeight }) => ({
         id, owner, priority, state, progress: completedWeight / totalWeight
       }))

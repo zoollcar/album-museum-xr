@@ -1,7 +1,7 @@
 import { getDoorPort, getTemplate } from './templates.js';
 import { ProgressiveTextureManager } from './progressive-textures.js';
 import { roomRect, rotateXZ, worldPort } from './layout.js';
-import { box, entity, disposeObject, disposeTree, COLORS } from './models/primitives.js';
+import { box, createIncrementalTreeDisposer, entity, COLORS } from './models/primitives.js';
 import { getRoomTheme, surfaceMaterial } from './themes.js';
 import { textPlane, waitForRoomSignage } from './models/signage.js';
 import { skylightBuildSteps, trackLightBuildSteps, wallBuildSteps } from './models/room-shell.js';
@@ -23,6 +23,16 @@ import {
   transferElevatorPosition,
   transferElevatorYaw
 } from './navigation.js';
+
+const ROOM_UNLOAD_GRACE_MS = 1500;
+const ROOM_RETENTION_MS = 8000;
+const MOVEMENT_IDLE_MS = 1200;
+
+function performanceDiagnosticsEnabled() {
+  if (import.meta.env.DEV) return true;
+  return typeof window !== 'undefined'
+    && new URLSearchParams(window.location.search).get('museumDebug') === '1';
+}
 
 function frameSlots(template, connectedDoorIds) {
   const slots = [];
@@ -51,6 +61,18 @@ function hasCaption(photo) {
   return Boolean(photo.title || photo.location || photo.date || photo.description);
 }
 
+function createElementWalker(root, visit) {
+  const stack = [root];
+  return () => {
+    const element = stack.pop();
+    if (!element) return true;
+    const children = [...element.children];
+    for (let index = children.length - 1; index >= 0; index -= 1) stack.push(children[index]);
+    visit(element);
+    return stack.length === 0;
+  };
+}
+
 export class MuseumScene {
   constructor({ scene, root, rig, head, config, layout, ui, spawnRequest = null }) {
     this.scene = scene;
@@ -62,15 +84,33 @@ export class MuseumScene {
     this.ui = ui;
     this.loadedRooms = new Map();
     this.roomJobs = new Map();
+    this.roomUnloadTimers = new Map();
+    this.retiringRooms = new Map();
+    this.retiringConnections = new Map();
     this.connectionJobs = new Map();
     this.connectionViews = new Map();
     this.walkRegions = [];
     this.colliders = [];
     this.currentRoomId = config.museum.lobby.id;
+    this.lastObservedRigPosition = rig.object3D.position.clone();
+    this.roomLastVisitedAt = new Map([[this.currentRoomId, performance.now()]]);
+    this.lastMovementAt = performance.now();
     this.spawnRequest = spawnRequest;
     this.spawnAnchors = new Map();
     this.ready = false;
-    this.scheduler = new FrameBudgetScheduler({ onError: (error) => console.error(error) });
+    this.treeDisposalQueue = [];
+    this.activeTreeDisposal = null;
+    this.disposed = false;
+    this.performanceEvents = [];
+    this.lastDiagnosticLogAt = new Map();
+    this.diagnosticsEnabled = performanceDiagnosticsEnabled();
+    this.scheduler = new FrameBudgetScheduler({
+      onError: (error) => console.error(error),
+      shouldRunTask: (task) => task.priority !== 'cleanup' || performance.now() - this.lastMovementAt >= MOVEMENT_IDLE_MS,
+      onDiagnostic: (event) => this.recordPerformanceEvent(`scheduler:${event.type}`, event, {
+        level: 'warn', throttleMs: event.type === 'late-frame' ? 1000 : 0
+      })
+    });
     this.textureManager = new ProgressiveTextureManager({
       camera: head.object3D,
       scheduler: this.scheduler,
@@ -82,25 +122,59 @@ export class MuseumScene {
       onError: (message) => this.ui.toast(message, 4200)
     });
     this.longTasks = [];
-    if (import.meta.env.DEV && typeof PerformanceObserver !== 'undefined') {
+    if (this.diagnosticsEnabled && typeof PerformanceObserver !== 'undefined') {
       try {
         this.longTaskObserver = new PerformanceObserver((list) => {
           for (const entry of list.getEntries()) {
             this.longTasks.push({ startTime: entry.startTime, duration: entry.duration });
             if (this.longTasks.length > 100) this.longTasks.shift();
+            this.recordPerformanceEvent('browser:long-task', { durationMs: entry.duration }, { level: 'warn' });
           }
         });
         this.longTaskObserver.observe({ type: 'longtask', buffered: true });
-        Object.defineProperty(window, 'museumPerformance', {
-          configurable: true,
-          value: { snapshot: () => ({ ...this.scheduler.snapshot(), longTasks: [...this.longTasks] }) }
-        });
       } catch { /* Long Task API is optional. */ }
+    }
+    if (this.diagnosticsEnabled) {
+      Object.defineProperty(window, 'museumPerformance', {
+        configurable: true,
+        value: { snapshot: () => ({
+          ...this.scheduler.snapshot(),
+          longTasks: [...this.longTasks],
+          events: [...this.performanceEvents],
+          loadedRooms: [...this.loadedRooms.keys()],
+          loadingRooms: [...this.roomJobs.keys()],
+          loadingConnections: [...this.connectionJobs.keys()],
+          movementIdleMs: performance.now() - this.lastMovementAt,
+          pendingRoomRetirements: this.roomUnloadTimers.size,
+          retiringRooms: [...this.retiringRooms.keys()],
+          queuedTreeDisposals: this.treeDisposalQueue.length + Number(Boolean(this.activeTreeDisposal))
+        }) }
+      });
     }
   }
 
+  recordPerformanceEvent(type, detail = {}, { level = 'info', throttleMs = 0 } = {}) {
+    const now = performance.now();
+    const previous = this.lastDiagnosticLogAt.get(type) || Number.NEGATIVE_INFINITY;
+    if (throttleMs && now - previous < throttleMs) return;
+    this.lastDiagnosticLogAt.set(type, now);
+    const event = {
+      type,
+      atMs: Math.round(now * 10) / 10,
+      currentRoomId: this.currentRoomId,
+      ...detail
+    };
+    this.performanceEvents.push(event);
+    if (this.performanceEvents.length > 200) this.performanceEvents.shift();
+    if (this.diagnosticsEnabled) (console[level] || console.info).call(console, '[MuseumPerf]', event);
+  }
+
   async initialize() {
-    if (this.spawnRequest && this.layout.rooms.has(this.spawnRequest.roomId)) this.currentRoomId = this.spawnRequest.roomId;
+    if (this.spawnRequest && this.layout.rooms.has(this.spawnRequest.roomId)) {
+      this.currentRoomId = this.spawnRequest.roomId;
+      this.roomLastVisitedAt.clear();
+      this.roomLastVisitedAt.set(this.currentRoomId, performance.now());
+    }
     await this.loadRoom(this.currentRoomId);
     const loaded = this.loadedRooms.get(this.currentRoomId);
     if (this.spawnRequest) await this.applySpawnRequest(this.spawnRequest);
@@ -112,7 +186,7 @@ export class MuseumScene {
     this.musicManager.setTrack(backgroundMusicForRoom(this.config, this.currentRoomId));
     this.ready = true;
     this.clock = window.setInterval(() => this.tick(), 180);
-    this.preloadAdjacentRooms(this.currentRoomId);
+    this.recordPerformanceEvent?.('museum:ready', { roomId: this.currentRoomId });
   }
 
   roomConfig(id) {
@@ -125,6 +199,9 @@ export class MuseumScene {
   }
 
   loadRoom(roomId, { priority = 'interactive' } = {}) {
+    this.cancelPendingRoomUnload?.(roomId);
+    const retiring = this.retiringRooms?.get(roomId);
+    if (retiring) return retiring.promise.then(() => this.loadRoom(roomId, { priority }));
     if (this.loadedRooms.has(roomId)) return Promise.resolve(this.loadedRooms.get(roomId));
     const existing = this.roomJobs.get(roomId);
     if (existing) {
@@ -136,6 +213,7 @@ export class MuseumScene {
       return existing.promise;
     }
     const room = this.roomConfig(roomId);
+    this.recordPerformanceEvent?.('room:load-start', { roomId, priority });
     const template = getTemplate(room.template);
     const placement = this.layout.placements.get(roomId);
     const group = entity('a-entity', {
@@ -175,52 +253,73 @@ export class MuseumScene {
         : this.galleryContentSteps(group, room, template, connectedDoorIds)),
       ...(this.layout.adjacency.get(room.id) || []).flatMap((edge) => this.roomDoorBuildSteps(group, room, edge))
     ];
-    const job = { roomId, state: 'preparing', stage: '准备房间结构', progress: 0, priority, group, handle: null, promise: null };
+    const job = { roomId, state: 'preparing', stage: '正在搭建房间', detail: '', progress: 0, priority, group, handle: null, promise: null };
     const updateProgress = ({ label, progress }) => {
-      job.stage = label || job.stage;
+      job.stage = this.friendlyLoadingStage(label || job.stage);
+      job.detail = room.title;
       job.progress = Math.min(.78, progress * .78);
-      this.updateRoomDoorProgress(roomId, { state: 'preparing', stage: job.stage, progress: job.progress });
+      this.updateRoomDoorProgress(roomId, {
+        state: 'preparing', stage: job.stage, detail: job.detail, progress: job.progress
+      });
     };
-    job.handle = this.scheduler.enqueue({ id: `room:${roomId}:build`, owner: `room:${roomId}`, priority, steps, onProgress: updateProgress });
+    job.handle = this.scheduler.enqueue({
+      id: `room:${roomId}:build`, owner: `room:${roomId}`, priority, steps,
+      onProgress: updateProgress, yieldAfterStep: true
+    });
     this.textureManager.setRoomPriority?.(roomId, priority);
     job.promise = (async () => {
       try {
         await job.handle.promise;
-        job.stage = '建立碰撞';
+        job.stage = '正在准备行走区域';
+        job.detail = room.title;
         job.progress = .8;
-        this.updateRoomDoorProgress(roomId, { state: 'preparing', stage: job.stage, progress: job.progress });
-        const colliderSteps = this.colliderSteps(`room:${roomId}`, group);
-        const colliderTask = this.scheduler.enqueue({
-          id: `room:${roomId}:colliders`, owner: `room:${roomId}`, priority: job.priority, steps: colliderSteps,
-          onProgress: ({ progress }) => {
-            job.progress = .8 + progress * .1;
-            this.updateRoomDoorProgress(roomId, { state: 'preparing', stage: '建立碰撞', progress: job.progress });
-          }
+        this.updateRoomDoorProgress(roomId, {
+          state: 'preparing', stage: job.stage, detail: job.detail, progress: job.progress
         });
+        const colliderTask = this.scheduleColliderBuild(`room:${roomId}`, group, job.priority);
         job.handle = colliderTask;
         await colliderTask.promise;
+        job.stage = '正在制作文字';
+        job.detail = room.title;
+        job.progress = .82;
+        this.updateRoomDoorProgress(roomId, {
+          state: 'preparing', stage: job.stage, detail: job.detail, progress: job.progress
+        });
         await waitForRoomSignage(roomId);
-        job.stage = '加载预览图';
-        job.progress = .92;
-        this.updateRoomDoorProgress(roomId, { state: 'preparing', stage: job.stage, progress: job.progress });
-        await this.textureManager.waitForRoomLow?.(roomId);
+        job.stage = '正在加载照片';
+        job.progress = .84;
+        this.updateRoomDoorProgress(roomId, {
+          state: 'preparing', stage: job.stage, detail: room.title, progress: job.progress
+        });
+        await this.textureManager.waitForRoomLow?.(roomId, ({ label, completed, total, progress }) => {
+          job.stage = '正在加载照片';
+          job.detail = total ? `${label || room.title} · ${completed}/${total}` : '这个房间没有照片';
+          job.progress = .84 + progress * .12;
+          this.updateRoomDoorProgress(roomId, {
+            state: 'preparing', stage: job.stage, detail: job.detail, progress: job.progress
+          });
+        });
         const loaded = { room, template, placement, group, portableFrames: [...group.querySelectorAll('.portable-frame')] };
         this.loadedRooms.set(roomId, loaded);
         this.addRoomRegion(roomId, placement, template);
         group.setAttribute('visible', true);
         job.state = 'ready';
         job.progress = 1;
-        this.updateRoomDoorProgress(roomId, { state: 'preparing', stage: '连接通道', progress: .94 });
+        this.updateRoomDoorProgress(roomId, {
+          state: 'preparing', stage: '正在准备通道', detail: '马上就好', progress: .97
+        });
         this.roomJobs.delete(roomId);
+        this.recordPerformanceEvent?.('room:load-ready', { roomId, priority });
         return loaded;
       } catch (error) {
         job.state = 'error';
         this.roomJobs.delete(roomId);
         this.removeColliders(`room:${roomId}`);
         this.textureManager.disposeRoom(roomId);
-        disposeTree(group);
-        group.remove();
+        group.setAttribute('visible', false);
+        this.trackRoomDisposal(roomId, [this.scheduleTreeDisposal(`room:${roomId}`, group)]);
         this.updateRoomDoorProgress(roomId, { state: 'error', stage: '加载失败，点击重试', progress: 0 });
+        this.recordPerformanceEvent?.('room:load-error', { roomId, priority, error: error.message }, { level: 'warn' });
         throw error;
       }
     })();
@@ -243,7 +342,10 @@ export class MuseumScene {
         const frame = box(group, { position: `4.4 2.15 ${-template.depth / 2 + .16}`, width: 5.2, height: 3.0, depth: .08, color: COLORS.frame });
         const plane = entity('a-plane', { position: `4.4 2.15 ${-template.depth / 2 + .215}`, width: 5, height: 2.8, material: 'color: #d7cdc0; roughness: .8', shadow: 'cast: false; receive: false' }, group);
         plane.dataset.maxWidth = '5'; plane.dataset.maxHeight = '2.8';
-        this.textureManager.register({ id: `${room.id}-hero`, roomId: room.id, plane, frame, sources: this.config.museum.heroImage });
+        this.textureManager.register({
+          id: `${room.id}-hero`, roomId: room.id, plane, frame,
+          sources: this.config.museum.heroImage, label: '大厅主照片'
+        });
       } },
       { label: '布置展品', run: () => { buildPlant(group, '-6.45 0 -4.65', { src: '/museum-assets/olive-tree.png', width: 2.1, height: 3.15, scale: .78 }); this.registerItemSpawn(room.id, 'plant-1', -6.45, -4.65); } },
       { label: '布置展品', run: () => { buildPlant(group, '6.25 0 -4.75', { src: '/museum-assets/compact-fern.png', width: 1.55, height: 1.55, scale: .75 }); this.registerItemSpawn(room.id, 'plant-2', 6.25, -4.75); } }
@@ -278,7 +380,11 @@ export class MuseumScene {
           x: photoPosition.x, z: photoPosition.z,
           approach: rotateXZ(slot.wall === 'west' ? 1 : slot.wall === 'east' ? -1 : 0, slot.wall === 'north' ? 1 : slot.wall === 'south' ? -1 : 0, this.layout.placements.get(room.id).rotation)
         });
-        this.textureManager.register({ id: `${room.id}-photo-${index}`, roomId: room.id, plane: mount.plane, frame: mount.frame, sources: photo.sources });
+        this.textureManager.register({
+          id: `${room.id}-photo-${index}`, roomId: room.id, plane: mount.plane, frame: mount.frame,
+          sources: photo.sources,
+          label: photo.title || `${photo.blockTitle || room.title} 第 ${index + 1} 张照片`
+        });
       } });
       if (hasCaption(photo)) steps.push({ label: '生成说明', run: () => {
         const lines = [photo.location, photo.date, photo.description].filter(Boolean);
@@ -317,7 +423,9 @@ export class MuseumScene {
       this.connectionViews.get(connection.id).doors.push({ roomId: room.id, destinationRoomId: edge.other.roomId, ...doorModel, port, worldPort: doorWorldPort });
       this.registerSpawnAnchor(room.id, endpoint.doorId, { kind: 'door', connectionId: connection.id, port: doorWorldPort });
       const targetJob = this.roomJobs.get(edge.other.roomId);
-      if (targetJob) doorModel.loadingIndicator.set({ state: targetJob.state, stage: targetJob.stage, progress: targetJob.progress });
+      if (targetJob) doorModel.loadingIndicator.set({
+        state: targetJob.state, stage: targetJob.stage, detail: targetJob.detail, progress: targetJob.progress
+      });
     } });
     return steps;
   }
@@ -326,6 +434,17 @@ export class MuseumScene {
     for (const view of this.connectionViews.values()) {
       for (const door of view.doors) if (door.destinationRoomId === roomId) door.loadingIndicator?.set(status);
     }
+  }
+
+  friendlyLoadingStage(stage) {
+    return ({
+      '准备房间结构': '正在搭建房间',
+      '布置展品': '正在摆放展品',
+      '生成说明': '正在制作说明牌',
+      '连接通道': '正在安装房门',
+      '建立碰撞': '正在准备行走区域',
+      '加载预览图': '正在加载照片'
+    })[stage] || stage;
   }
 
   elevatorStyleId(connection) {
@@ -425,22 +544,36 @@ export class MuseumScene {
       }
       if (view.elevator) this.setElevatorDoor(view, null);
       else this.setConnectionOpen(view, false);
+      this.recordPerformanceEvent?.('door:closed', { connectionId, fromRoomId });
       return;
     }
     view.loading = true;
     const destination = view.connection.from.roomId === fromRoomId ? view.connection.to.roomId : view.connection.from.roomId;
+    const loadStartedAt = performance.now();
+    this.recordPerformanceEvent?.('door:load-start', { connectionId, fromRoomId, destination });
+    this.updateRoomDoorProgress(destination, {
+      state: 'preparing', stage: '正在准备房间', detail: this.roomConfig(destination).title, progress: .01
+    });
     this.ui.toast(`正在准备“${this.roomConfig(destination).title}”…`, 12000);
     try {
       await this.loadRoom(destination, { priority: 'interactive' });
-      this.updateRoomDoorProgress(destination, { state: 'preparing', stage: '连接通道', progress: .96 });
+      this.updateRoomDoorProgress(destination, {
+        state: 'preparing', stage: '正在准备通道', detail: '马上就好', progress: .97
+      });
       await this.ensureConnector(view.connection, { priority: 'interactive' });
       this.updateRoomDoorProgress(destination, { state: 'ready', stage: '完成', progress: 1 });
       if (view.elevator) this.setElevatorDoor(view, fromRoomId);
       else this.setConnectionOpen(view, true);
       this.ui.toast(`“${this.roomConfig(destination).title}”已开放。`, 2200);
+      this.recordPerformanceEvent?.('door:load-ready', {
+        connectionId, fromRoomId, destination, durationMs: performance.now() - loadStartedAt
+      });
     } catch (error) {
       console.error(error);
       this.ui.toast('房间加载失败，点击门可重试。', 4200);
+      this.recordPerformanceEvent?.('door:load-error', {
+        connectionId, fromRoomId, destination, durationMs: performance.now() - loadStartedAt, error: error.message
+      }, { level: 'warn' });
     } finally {
       view.loading = false;
     }
@@ -485,6 +618,8 @@ export class MuseumScene {
   ensureConnector(connection, { priority = 'background' } = {}) {
     const view = this.connectionViews.get(connection.id);
     if (view.connector) return Promise.resolve(view.connector);
+    const retiring = this.retiringConnections.get(connection.id);
+    if (retiring) return retiring.then(() => this.ensureConnector(connection, { priority }));
     const existing = this.connectionJobs.get(connection.id);
     if (existing) {
       if (priority === 'interactive') {
@@ -501,14 +636,14 @@ export class MuseumScene {
         run: () => this.buildCorridorSegment(connector, point, connection.path[index + 1], connection.id, index)
       }));
     const job = { connector, handle: null, promise: null, priority };
-    job.handle = this.scheduler.enqueue({ id: `connector:${connection.id}:build`, owner: `connector:${connection.id}`, priority, steps });
+    job.handle = this.scheduler.enqueue({
+      id: `connector:${connection.id}:build`, owner: `connector:${connection.id}`, priority,
+      steps, yieldAfterStep: true
+    });
     job.promise = (async () => {
       try {
         await job.handle.promise;
-        const colliders = this.scheduler.enqueue({
-          id: `connector:${connection.id}:colliders`, owner: `connector:${connection.id}`, priority: job.priority,
-          steps: this.colliderSteps(`connector:${connection.id}`, connector)
-        });
+        const colliders = this.scheduleColliderBuild(`connector:${connection.id}`, connector, job.priority);
         job.handle = colliders;
         await colliders.promise;
         connector.setAttribute('visible', true);
@@ -518,8 +653,8 @@ export class MuseumScene {
       } catch (error) {
         this.connectionJobs.delete(connection.id);
         this.removeColliders(`connector:${connection.id}`);
-        disposeTree(connector);
-        connector.remove();
+        connector.setAttribute('visible', false);
+        this.trackConnectionDisposal(connection.id, this.scheduleTreeDisposal(`connector:${connection.id}`, connector));
         throw error;
       }
     })();
@@ -569,18 +704,28 @@ export class MuseumScene {
     this.walkRegions.push({ type: 'room', roomId, x: placement.x, z: placement.z, width: rect.width - .45, depth: rect.depth - .45 });
   }
 
-  registerColliderTree(owner, root) {
+  scheduleColliderBuild(owner, root, priority) {
     this.removeColliders(owner);
-    root.object3D.updateWorldMatrix(true, true);
-    for (const element of root.querySelectorAll('.museum-collider')) this.registerColliderElement(owner, element);
-  }
-
-  colliderSteps(owner, root) {
-    this.removeColliders(owner);
-    root.object3D.updateWorldMatrix(true, true);
-    const elements = [...root.querySelectorAll('.museum-collider')];
-    if (!elements.length) return [() => {}];
-    return elements.map((element) => ({ label: '建立碰撞', run: () => this.registerColliderElement(owner, element) }));
+    let visitedElements = 0;
+    let colliderCount = 0;
+    this.recordPerformanceEvent?.('colliders:build-start', { owner, priority });
+    const runSlice = createElementWalker(root, (element) => {
+      visitedElements += 1;
+      if (!element.classList?.contains('museum-collider')) return;
+      colliderCount += 1;
+      this.registerColliderElement(owner, element);
+    });
+    const task = this.scheduler.enqueueIncremental({
+      id: `${owner}:colliders`, owner, priority, label: '建立碰撞', runSlice, yieldAfterStep: true
+    });
+    task.promise.then(() => this.recordPerformanceEvent?.('colliders:build-ready', {
+      owner, priority, visitedElements, colliderCount
+    }), (error) => {
+      if (error.name !== 'AbortError') this.recordPerformanceEvent?.('colliders:build-error', {
+        owner, priority, error: error.message
+      }, { level: 'warn' });
+    });
+    return task;
   }
 
   registerColliderElement(owner, element) {
@@ -720,6 +865,7 @@ export class MuseumScene {
   unloadDistantRooms() {
     const keep = new Set([this.currentRoomId]);
     for (const edge of this.layout.adjacency.get(this.currentRoomId) || []) keep.add(edge.other.roomId);
+    for (const roomId of keep) this.cancelPendingRoomUnload(roomId);
     for (const [roomId] of this.roomJobs) {
       if (keep.has(roomId)) continue;
       this.scheduler.cancelOwner(`room:${roomId}`, 'Room is no longer adjacent');
@@ -732,46 +878,145 @@ export class MuseumScene {
       job.connector?.setAttribute('visible', false);
     }
     for (const [roomId, loaded] of [...this.loadedRooms]) {
-      if (keep.has(roomId)) continue;
-      this.scheduler.cancelOwner(`room:${roomId}`);
-      for (const frame of loaded.portableFrames || []) {
-        const grabber = frame.dataset.oldGrabber && document.getElementById(frame.dataset.oldGrabber);
-        grabber?.components?.['grab-magnet-target']?.grabEnd();
-        if (!loaded.group.contains(frame)) frame.remove();
-      }
-      this.loadedRooms.delete(roomId);
-      this.walkRegions = this.walkRegions.filter((region) => region.roomId !== roomId);
-      this.removeColliders(`room:${roomId}`);
-      loaded.group.setAttribute('visible', false);
-      for (const view of this.connectionViews.values()) {
-        const removedDoors = view.doors.filter((door) => door.roomId === roomId);
-        removedDoors.forEach((door) => door.loadingIndicator?.dispose());
-        view.doors = view.doors.filter((door) => door.roomId !== roomId);
-        if (view.connection.from.roomId === roomId || view.connection.to.roomId === roomId) {
-          if (view.elevator) {
-            this.setElevatorDoor(view, null, { immediate: true });
-            view.elevator.phase = 'idle';
-            view.elevator.exitRoomId = null;
-          } else this.setConnectionOpen(view, false, { immediate: true });
-          if (view.connector) {
-            this.removeColliders(`connector:${view.connection.id}`);
-            this.scheduleTreeDisposal(`connector:${view.connection.id}`, view.connector);
-            view.connector = null;
-          }
-        }
-      }
-      this.textureManager.disposeRoom(roomId);
-      this.scheduleTreeDisposal(`room:${roomId}`, loaded.group);
+      if (keep.has(roomId) || this.roomUnloadTimers.has(roomId) || this.retiringRooms.has(roomId)) continue;
+      this.scheduleRoomUnload(roomId, loaded);
     }
   }
 
+  scheduleRoomUnload(roomId, loaded) {
+    const now = performance.now();
+    const retainedUntil = (this.roomLastVisitedAt.get(roomId) ?? now) + ROOM_RETENTION_MS;
+    const idleUntil = this.lastMovementAt + MOVEMENT_IDLE_MS;
+    const delay = Math.max(ROOM_UNLOAD_GRACE_MS, retainedUntil - now, idleUntil - now);
+    this.recordPerformanceEvent?.('room:retire-scheduled', { roomId, delayMs: Math.max(0, delay) });
+    const timer = window.setTimeout(() => {
+      this.roomUnloadTimers.delete(roomId);
+      if (this.activeTextureRoomIds().has(roomId)) return;
+      const checkTime = performance.now();
+      const remainingRetention = (this.roomLastVisitedAt.get(roomId) ?? checkTime) + ROOM_RETENTION_MS - checkTime;
+      const remainingIdle = this.lastMovementAt + MOVEMENT_IDLE_MS - checkTime;
+      const remaining = Math.max(remainingRetention, remainingIdle);
+      if (remaining > 0) {
+        this.recordPerformanceEvent?.('room:retire-deferred', { roomId, remainingMs: remaining });
+        this.scheduleRoomUnload(roomId, loaded);
+        return;
+      }
+      this.beginRoomRetirement(roomId, loaded);
+    }, Math.max(0, delay));
+    this.roomUnloadTimers.set(roomId, timer);
+  }
+
+  cancelPendingRoomUnload(roomId) {
+    const timer = this.roomUnloadTimers.get(roomId);
+    if (timer === undefined) return false;
+    window.clearTimeout(timer);
+    this.roomUnloadTimers.delete(roomId);
+    this.recordPerformanceEvent?.('room:retire-cancelled', { roomId });
+    return true;
+  }
+
+  beginRoomRetirement(roomId, loaded) {
+    if (this.disposed || this.loadedRooms.get(roomId) !== loaded || this.retiringRooms.has(roomId)) return null;
+    this.recordPerformanceEvent?.('room:retire-start', { roomId });
+    this.scheduler.cancelOwner(`room:${roomId}`);
+    for (const view of this.connectionViews.values()) {
+      if (view.connection.from.roomId !== roomId && view.connection.to.roomId !== roomId) continue;
+      if (view.elevator) {
+        this.setElevatorDoor(view, null, { immediate: true });
+        view.elevator.phase = 'idle';
+        view.elevator.exitRoomId = null;
+      } else this.setConnectionOpen(view, false, { immediate: true });
+    }
+    loaded.group.setAttribute('visible', false);
+    this.loadedRooms.delete(roomId);
+    this.walkRegions = this.walkRegions.filter((region) => region.roomId !== roomId);
+    this.removeColliders(`room:${roomId}`);
+
+    const cleanupPromises = [];
+    for (const frame of loaded.portableFrames || []) {
+      const grabber = frame.dataset.oldGrabber && document.getElementById(frame.dataset.oldGrabber);
+      grabber?.components?.['grab-magnet-target']?.grabEnd();
+      if (!loaded.group.contains(frame)) frame.remove();
+    }
+    for (const view of this.connectionViews.values()) {
+      view.doors = view.doors.filter((door) => door.roomId !== roomId);
+      if (view.connection.from.roomId !== roomId && view.connection.to.roomId !== roomId) continue;
+      if (view.connector) {
+        this.removeColliders(`connector:${view.connection.id}`);
+        view.connector.setAttribute('visible', false);
+        const connectorCleanup = this.scheduleTreeDisposal(`connector:${view.connection.id}`, view.connector);
+        cleanupPromises.push(this.trackConnectionDisposal(view.connection.id, connectorCleanup));
+        view.connector = null;
+      }
+    }
+    this.textureManager.disposeRoom(roomId);
+    cleanupPromises.push(this.scheduleTreeDisposal(`room:${roomId}`, loaded.group));
+    return this.trackRoomDisposal(roomId, cleanupPromises);
+  }
+
+  trackRoomDisposal(roomId, cleanupPromises) {
+    const existing = this.retiringRooms.get(roomId);
+    if (existing) return existing.promise;
+    const entry = { promise: null };
+    entry.promise = Promise.allSettled(cleanupPromises).then(() => {
+      if (this.retiringRooms.get(roomId) === entry) this.retiringRooms.delete(roomId);
+      this.roomLastVisitedAt.delete(roomId);
+      this.recordPerformanceEvent?.('room:retire-ready', { roomId });
+    });
+    this.retiringRooms.set(roomId, entry);
+    return entry.promise;
+  }
+
+  trackConnectionDisposal(connectionId, cleanupPromise) {
+    const existing = this.retiringConnections.get(connectionId);
+    if (existing) return existing;
+    const tracked = Promise.resolve(cleanupPromise).catch((error) => {
+      if (error.name !== 'AbortError') console.error(error);
+    }).then(() => {
+      if (this.retiringConnections.get(connectionId) === tracked) this.retiringConnections.delete(connectionId);
+    });
+    this.retiringConnections.set(connectionId, tracked);
+    return tracked;
+  }
+
   scheduleTreeDisposal(owner, root) {
-    const objects = [];
-    root.object3D?.traverse((object) => objects.push(object));
-    const steps = objects.map((object) => ({ label: '释放资源', run: () => disposeObject(object) }));
-    steps.push({ label: '释放资源', run: () => root.remove() });
-    const task = this.scheduler.enqueue({ id: `${owner}:dispose`, owner, priority: 'cleanup', steps });
-    task.promise.catch((error) => { if (error.name !== 'AbortError') console.error(error); });
+    return new Promise((resolve, reject) => {
+      this.treeDisposalQueue.push({ owner, root, resolve, reject });
+      this.startNextTreeDisposal();
+    });
+  }
+
+  startNextTreeDisposal() {
+    if (this.disposed || this.activeTreeDisposal || !this.treeDisposalQueue.length) return;
+    const queued = this.treeDisposalQueue.shift();
+    const startedAt = performance.now();
+    this.recordPerformanceEvent?.('tree-disposal:start', { owner: queued.owner });
+    const task = this.scheduler.enqueueIncremental({
+      id: `${queued.owner}:dispose`,
+      owner: queued.owner,
+      priority: 'cleanup',
+      label: '释放资源',
+      runSlice: createIncrementalTreeDisposer(queued.root)
+    });
+    this.activeTreeDisposal = { ...queued, task };
+    task.promise.then(
+      () => {
+        queued.resolve();
+        this.recordPerformanceEvent?.('tree-disposal:ready', {
+          owner: queued.owner, durationMs: performance.now() - startedAt
+        });
+        this.activeTreeDisposal = null;
+        this.startNextTreeDisposal();
+      },
+      (error) => {
+        queued.reject(error);
+        if (error.name !== 'AbortError') this.recordPerformanceEvent?.('tree-disposal:error', {
+          owner: queued.owner, durationMs: performance.now() - startedAt, error: error.message
+        }, { level: 'warn' });
+        this.activeTreeDisposal = null;
+        this.startNextTreeDisposal();
+      }
+    );
   }
 
   activeTextureRoomIds() {
@@ -780,52 +1025,51 @@ export class MuseumScene {
     return active;
   }
 
-  preloadAdjacentRooms(roomId) {
-    const generation = (this.preloadGeneration || 0) + 1;
-    this.preloadGeneration = generation;
-    const run = async () => {
-      for (const edge of this.layout.adjacency.get(roomId) || []) {
-        if (this.preloadGeneration !== generation || this.currentRoomId !== roomId) return;
-        const destination = edge.other.roomId;
-        try {
-          await this.loadRoom(destination, { priority: 'background' });
-          if (this.preloadGeneration !== generation || this.currentRoomId !== roomId) return;
-          this.updateRoomDoorProgress(destination, { state: 'preparing', stage: '连接通道', progress: .96 });
-          await this.ensureConnector(edge.connection, { priority: 'background' });
-          this.updateRoomDoorProgress(destination, { state: 'ready', stage: '完成', progress: 1 });
-        } catch (error) {
-          if (error.name !== 'AbortError') console.error(error);
-        }
-      }
-    };
-    run();
-  }
-
   frame(time) {
     this.scheduler.runFrame(time);
   }
 
   tick() {
     const now = performance.now();
+    if (this.lastObservedRigPosition.distanceToSquared(this.rig.object3D.position) > .0001) {
+      this.noteMovement(now);
+      this.lastObservedRigPosition.copy(this.rig.object3D.position);
+    }
     this.textureManager.tick(now);
     this.handleElevators(now);
     const roomId = this.detectCurrentRoom();
     if (roomId !== this.currentRoomId) {
+      const previousRoomId = this.currentRoomId;
+      this.roomLastVisitedAt.set(previousRoomId, now);
+      this.roomLastVisitedAt.set(roomId, now);
       this.currentRoomId = roomId;
+      this.recordPerformanceEvent?.('room:entered', { previousRoomId, roomId });
       const room = this.roomConfig(roomId);
       this.ui.setRoom(this.config.museum.title, roomId === this.config.museum.lobby.id ? '大厅' : room.title);
       this.musicManager.setTrack(backgroundMusicForRoom(this.config, roomId));
       this.unloadDistantRooms();
-      this.preloadAdjacentRooms(roomId);
     }
   }
 
+  noteMovement(now = performance.now()) {
+    this.lastMovementAt = now;
+    if (this.activeTreeDisposal) this.recordPerformanceEvent?.('tree-disposal:paused-by-movement', {
+      owner: this.activeTreeDisposal.owner
+    }, { throttleMs: 1000 });
+  }
+
   dispose() {
+    this.disposed = true;
     clearInterval(this.clock);
+    for (const timer of this.roomUnloadTimers.values()) window.clearTimeout(timer);
+    this.roomUnloadTimers.clear();
+    const abort = new Error('Museum disposed');
+    abort.name = 'AbortError';
+    for (const queued of this.treeDisposalQueue.splice(0)) queued.reject(abort);
     this.textureManager.dispose();
     this.musicManager.dispose();
     this.scheduler.dispose();
     this.longTaskObserver?.disconnect();
-    if (import.meta.env.DEV) delete window.museumPerformance;
+    if (this.diagnosticsEnabled) delete window.museumPerformance;
   }
 }

@@ -56,4 +56,63 @@ describe('FrameBudgetScheduler', () => {
     await expect(task.promise).rejects.toMatchObject({ name: 'AbortError' });
     expect(task.state).toBe('cancelled');
   });
+
+  it('runs at most one incremental cleanup slice per frame after higher-priority work', async () => {
+    const clock = controlledClock();
+    const order = [];
+    let cleanupSlices = 0;
+    const scheduler = new FrameBudgetScheduler({ now: clock.now });
+    const cleanup = scheduler.enqueueIncremental({
+      id: 'room:a:dispose',
+      runSlice: () => {
+        order.push('cleanup');
+        cleanupSlices += 1;
+        clock.advance(.2);
+        return cleanupSlices === 3;
+      }
+    });
+    const interactive = scheduler.enqueue({
+      id: 'room:b:build',
+      priority: 'interactive',
+      steps: [() => { order.push('interactive'); clock.advance(.2); }]
+    });
+
+    scheduler.runFrame(0);
+    expect(order).toEqual(['interactive', 'cleanup']);
+    expect(cleanupSlices).toBe(1);
+    scheduler.runFrame(14);
+    expect(cleanupSlices).toBe(2);
+    scheduler.runFrame(28);
+    await Promise.all([cleanup.promise, interactive.promise]);
+    expect(cleanupSlices).toBe(3);
+    expect(scheduler.snapshot()).toMatchObject({ cleanupSlices: 3, queuedCleanupTasks: 0 });
+  });
+
+  it('can pause cleanup while movement is active', async () => {
+    let moving = true;
+    const cleanupStep = vi.fn(() => true);
+    const scheduler = new FrameBudgetScheduler({ shouldRunTask: (task) => task.priority !== 'cleanup' || !moving });
+    const cleanup = scheduler.enqueueIncremental({ id: 'cleanup', runSlice: cleanupStep });
+
+    scheduler.runFrame(0);
+    expect(cleanupStep).not.toHaveBeenCalled();
+    moving = false;
+    scheduler.runFrame(14);
+    await cleanup.promise;
+    expect(cleanupStep).toHaveBeenCalledOnce();
+  });
+
+  it('yields after one structural build step even when frame budget remains', async () => {
+    const clock = controlledClock();
+    const steps = [vi.fn(() => clock.advance(.1)), vi.fn(() => clock.advance(.1))];
+    const scheduler = new FrameBudgetScheduler({ now: clock.now });
+    const task = scheduler.enqueue({ id: 'room:a', steps, yieldAfterStep: true });
+
+    scheduler.runFrame(0);
+    expect(steps[0]).toHaveBeenCalledOnce();
+    expect(steps[1]).not.toHaveBeenCalled();
+    scheduler.runFrame(14);
+    await task.promise;
+    expect(steps[1]).toHaveBeenCalledOnce();
+  });
 });

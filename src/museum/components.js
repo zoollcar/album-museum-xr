@@ -2,6 +2,7 @@ import { movementAxesFromDirections, resolvePlanarMovement } from './movement.js
 
 function moveWithCollision(el, movement, distance) {
   const app = window.museumApp;
+  app?.noteMovement?.();
   if (!app?.ready) {
     el.object3D.position.addScaledVector(movement, distance);
     return;

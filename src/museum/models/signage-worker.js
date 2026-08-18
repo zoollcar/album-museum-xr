@@ -1,3 +1,5 @@
+import { createGpuReadySignageBitmap } from './signage-bitmap.js';
+
 const SIGN_STYLES = {
   slogan: { background: 'transparent', color: '#3b3027', accent: '#73583b', titleSize: 132, bodySize: 64, border: null },
   'wall-label': { background: 'transparent', color: '#342d27', accent: '#342d27', titleSize: 76, bodySize: 50, border: null },
@@ -17,7 +19,7 @@ function wrapCanvasText(context, text, maxWidth) {
   return rows;
 }
 
-self.addEventListener('message', ({ data }) => {
+self.addEventListener('message', async ({ data }) => {
   try {
     const options = data.options;
     const displayWidth = options.width || 2;
@@ -52,7 +54,7 @@ self.addEventListener('message', ({ data }) => {
       y += style.bodySize + 16;
       if (y > textureHeight - 36) break;
     }
-    const bitmap = canvas.transferToImageBitmap();
+    const bitmap = await createGpuReadySignageBitmap(canvas);
     self.postMessage({ id: data.id, bitmap }, [bitmap]);
   } catch (error) {
     self.postMessage({ id: data.id, error: error.message || String(error) });

@@ -69,7 +69,7 @@ npm run validate:config -- path/to/another.json
 ```json
 [
   {
-    "AllowedOrigins": ["https://museum.example.com", "http://localhost:4173"],
+    "AllowedOrigins": ["*"],
     "AllowedMethods": ["GET", "HEAD"],
     "AllowedHeaders": ["*"],
     "ExposeHeaders": ["Content-Length", "ETag"],
@@ -77,6 +77,8 @@ npm run validate:config -- path/to/another.json
   }
 ]
 ```
+
+R2 不支持 `http://localhost:*` 这种仅对 localhost 放开任意端口的 Origin 模式。对于仅存放公开图片、且只允许 `GET`、`HEAD` 的桶，可以像上面一样使用 `*`，从而支持任意 localhost 端口；这也会允许任意网站跨域读取这些公开资源。私有资源应改为逐项列出精确 Origin。修改已通过自定义域名提供服务的 R2 CORS 后，还需要清理该主机名的 CDN 缓存，旧缓存才会带上新的响应头。
 
 ## JSON 最小结构
 
@@ -166,6 +168,16 @@ npm run validate:config -- path/to/another.json
 - `spawnDistance=2.5` 可覆盖与目标的距离，范围为 0.6–8 米。
 - `spawnYaw=90` 可覆盖自动朝向，单位为度。
 - 旧的 `previewRoom`、`previewDoor` 参数仍可继续使用。
+
+## 性能诊断
+
+开发模式会在控制台输出以 `[MuseumPerf]` 开头的结构化日志，包括点击门后的加载、房间进入、碰撞建立、延期回收、资源清理、慢调度切片和浏览器长任务。生产构建可在地址后添加 `?museumDebug=1` 临时启用同一套诊断。需要一次性查看当前状态时，可在控制台运行：
+
+```js
+window.museumPerformance.snapshot()
+```
+
+其中 `events` 是最近 200 条生命周期事件，`longTasks` 是浏览器记录的长任务，`tasks`、`retiringRooms` 和 `queuedTreeDisposals` 分别表示当前调度、房间回收与实体清理状态。
 
 ## 测试与构建
 

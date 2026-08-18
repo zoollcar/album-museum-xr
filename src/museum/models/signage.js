@@ -127,6 +127,39 @@ export async function waitForRoomSignage(roomId) {
   while (pendingByRoom.get(roomId)?.size) await Promise.allSettled([...pendingByRoom.get(roomId)]);
 }
 
+export async function installWorkerBitmap({ bitmap, plane, material, roomId, scheduler, taskId }) {
+  let pendingBitmap = bitmap;
+  const commit = () => {
+    if (!plane.isConnected) {
+      pendingBitmap?.close?.();
+      pendingBitmap = null;
+      return;
+    }
+    const nextTexture = new THREE.Texture(pendingBitmap);
+    nextTexture.colorSpace = THREE.SRGBColorSpace;
+    nextTexture.flipY = false;
+    nextTexture.needsUpdate = true;
+    nextTexture.userData.imageBitmap = pendingBitmap;
+    material.map = nextTexture;
+    material.color.set('#ffffff');
+    material.needsUpdate = true;
+    pendingBitmap = null;
+  };
+  try {
+    if (scheduler) await scheduler.enqueue({
+      id: taskId,
+      owner: `room:${roomId || 'shared'}`,
+      priority: 'background',
+      steps: [{ label: '生成说明', run: commit }]
+    }).promise;
+    else commit();
+  } catch (error) {
+    pendingBitmap?.close?.();
+    pendingBitmap = null;
+    throw error;
+  }
+}
+
 export function textPlane(parent, options) {
   const plane = entity('a-entity', { position: options.position, rotation: options.rotation }, parent);
   const workerRender = renderInWorker(options);
@@ -140,43 +173,41 @@ export function textPlane(parent, options) {
   plane.dataset.signStyle = options.signStyle || 'wall-label';
   if (workerRender) {
     const roomId = roomIdFor(parent);
-    const complete = workerRender.then((bitmap) => {
-      const commit = () => {
-        if (!plane.isConnected) { bitmap.close?.(); return; }
-        const nextTexture = new THREE.Texture(bitmap);
-        nextTexture.colorSpace = THREE.SRGBColorSpace;
-        nextTexture.needsUpdate = true;
-        nextTexture.userData.imageBitmap = bitmap;
-        material.map = nextTexture;
-        material.color.set('#ffffff');
-        material.needsUpdate = true;
-      };
-      const scheduler = window.museumApp?.scheduler;
-      if (!scheduler) { commit(); return; }
-      return scheduler.enqueue({
-        id: `signage:${roomId || 'shared'}:${signageRequestId++}`,
-        owner: `room:${roomId || 'shared'}`,
-        priority: 'background',
-        steps: [{ label: '生成说明', run: commit }]
-      }).promise;
-    }).catch((error) => {
-      console.warn('文字纹理后台生成失败，使用主线程回退。', error);
-      const fallback = () => {
-        if (!plane.isConnected) return;
-        const fallbackTexture = makeTextCanvas(options);
-        material.map = fallbackTexture;
-        material.color.set('#ffffff');
-        material.needsUpdate = true;
-      };
-      const scheduler = window.museumApp?.scheduler;
-      if (scheduler) return scheduler.enqueue({
-        id: `signage-fallback:${roomId || 'shared'}:${signageRequestId++}`,
-        owner: `room:${roomId || 'shared'}`,
-        priority: 'background',
-        steps: [{ label: '生成说明', run: fallback }]
-      }).promise;
-      fallback();
-    });
+    const complete = (async () => {
+      try {
+        const bitmap = await workerRender;
+        await installWorkerBitmap({
+          bitmap,
+          plane,
+          material,
+          roomId,
+          scheduler: window.museumApp?.scheduler,
+          taskId: `signage:${roomId || 'shared'}:${signageRequestId++}`
+        });
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        console.warn('文字纹理后台生成失败，使用主线程回退。', error);
+        const fallback = () => {
+          if (!plane.isConnected) return;
+          const fallbackTexture = makeTextCanvas(options);
+          material.map = fallbackTexture;
+          material.color.set('#ffffff');
+          material.needsUpdate = true;
+        };
+        const scheduler = window.museumApp?.scheduler;
+        try {
+          if (scheduler) await scheduler.enqueue({
+            id: `signage-fallback:${roomId || 'shared'}:${signageRequestId++}`,
+            owner: `room:${roomId || 'shared'}`,
+            priority: 'background',
+            steps: [{ label: '生成说明', run: fallback }]
+          }).promise;
+          else fallback();
+        } catch (fallbackError) {
+          if (fallbackError.name !== 'AbortError') console.warn('文字纹理主线程回退失败。', fallbackError);
+        }
+      }
+    })();
     trackRoomPromise(roomId, complete);
   }
   return plane;

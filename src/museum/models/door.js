@@ -3,48 +3,58 @@ import { textPlane } from './signage.js';
 import { resolveDoorStyle } from './door-styles.js';
 
 function buildDoorLoadIndicator(parent) {
-  const root = entity('a-entity', { position: '0 .42 -.14', visible: false }, parent);
+  const root = entity('a-entity', { position: '0 1.42 .2', visible: false }, parent);
   const canvas = document.createElement('canvas');
   canvas.width = 512;
-  canvas.height = 128;
+  canvas.height = 160;
   const context = canvas.getContext('2d');
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, depthWrite: false, toneMapped: false });
   const label = entity('a-entity', {}, root);
-  label.setObject3D('mesh', new THREE.Mesh(new THREE.PlaneGeometry(1.72, .43), material));
-  box(root, { position: '0 -.29 .005', width: 1.72, height: .075, depth: .012, color: '#2d2925', shadow: false, material: 'color: #2d2925; opacity: .88; transparent: true' });
-  const bar = box(root, { position: '-.86 -.29 .014', width: 1.72, height: .055, depth: .014, color: '#d2ad69', shadow: false, material: 'color: #d2ad69; emissive: #6e4f22; emissiveIntensity: .28' });
+  label.setObject3D('mesh', new THREE.Mesh(new THREE.PlaneGeometry(1.86, .58), material));
+  box(root, { position: '0 -.35 .005', width: 1.86, height: .075, depth: .012, color: '#2d2925', shadow: false, material: 'color: #2d2925; opacity: .88; transparent: true' });
+  const bar = box(root, { position: '-.93 -.35 .014', width: 1.86, height: .055, depth: .014, color: '#d2ad69', shadow: false, material: 'color: #d2ad69; emissive: #6e4f22; emissiveIntensity: .28' });
   bar.object3D.scale.x = 0.001;
   let lastLabel = '';
+  let lastDetail = '';
   let lastBucket = -1;
-  const draw = (stage, progress) => {
+  const draw = (stage, detail, progress) => {
     const percent = Math.round(Math.max(0, Math.min(1, progress)) * 100);
     const bucket = Math.floor(percent / 5);
-    if (stage === lastLabel && bucket === lastBucket) return;
+    if (stage === lastLabel && detail === lastDetail && bucket === lastBucket) return;
     lastLabel = stage;
+    lastDetail = detail;
     lastBucket = bucket;
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = 'rgba(32, 28, 24, .9)';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = '#f4eadc';
-    context.font = '600 42px "Segoe UI", "Microsoft YaHei", sans-serif';
-    context.fillText(stage || '正在准备', 24, 18);
+    context.font = '600 36px "Segoe UI", "Microsoft YaHei", sans-serif';
+    context.textBaseline = 'middle';
+    context.fillText((stage || '正在准备').slice(0, 14), 24, 42);
+    context.fillStyle = '#cfc3b3';
+    context.font = '500 27px "Segoe UI", "Microsoft YaHei", sans-serif';
+    context.fillText((detail || '请稍候…').slice(0, 22), 24, 101);
     context.fillStyle = '#d2ad69';
     context.font = '500 30px "Segoe UI", sans-serif';
     context.textAlign = 'right';
-    context.fillText(`${percent}%`, 488, 75);
+    context.fillText(`${percent}%`, 488, 101);
     context.textAlign = 'left';
     texture.needsUpdate = true;
     const scale = Math.max(.001, percent / 100);
     bar.object3D.scale.x = scale;
-    bar.object3D.position.x = -.86 + .86 * scale;
+    bar.object3D.position.x = -.93 + .93 * scale;
   };
   return {
     root,
-    set({ state = 'preparing', stage = '正在准备', progress = 0 } = {}) {
+    set({ state = 'preparing', stage = '正在准备', detail = '', progress = 0 } = {}) {
       root.setAttribute('visible', state !== 'idle' && state !== 'ready');
-      draw(state === 'error' ? '加载失败，点击重试' : stage, state === 'error' ? 0 : progress);
+      draw(
+        state === 'error' ? '加载失败' : stage,
+        state === 'error' ? '请点击门重试' : detail,
+        state === 'error' ? 0 : progress
+      );
     },
     dispose() {
       texture.dispose();

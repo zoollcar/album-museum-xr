@@ -27,19 +27,53 @@ export function box(parent, {
   return el;
 }
 
-export function disposeObject(object) {
-  object.geometry?.dispose?.();
+function disposeTexture(texture, released) {
+  if (!texture || texture.userData?.managedProgressive || released.textures.has(texture)) return;
+  released.textures.add(texture);
+  const bitmap = texture.userData?.imageBitmap;
+  if (bitmap && !released.bitmaps.has(bitmap)) {
+    released.bitmaps.add(bitmap);
+    bitmap.close?.();
+  }
+  texture.dispose?.();
+}
+
+export function disposeObject(object, released = {
+  geometries: new WeakSet(), materials: new WeakSet(), textures: new WeakSet(), bitmaps: new WeakSet()
+}) {
+  if (object.geometry && !released.geometries.has(object.geometry)) {
+    released.geometries.add(object.geometry);
+    object.geometry.dispose?.();
+  }
   if (!object.material) return;
   const materials = Array.isArray(object.material) ? object.material : [object.material];
   materials.forEach((material) => {
-    if (material.map && !material.map.userData?.managedProgressive) {
-      material.map.userData?.imageBitmap?.close?.();
-      material.map.dispose?.();
-    }
+    if (!material || released.materials.has(material)) return;
+    released.materials.add(material);
+    for (const value of Object.values(material)) if (value?.isTexture) disposeTexture(value, released);
     material.dispose?.();
   });
 }
 
 export function disposeTree(root) {
-  root.object3D?.traverse(disposeObject);
+  const released = {
+    geometries: new WeakSet(), materials: new WeakSet(), textures: new WeakSet(), bitmaps: new WeakSet()
+  };
+  root.object3D?.traverse((object) => disposeObject(object, released));
+}
+
+export function createIncrementalTreeDisposer(root) {
+  const released = {
+    geometries: new WeakSet(), materials: new WeakSet(), textures: new WeakSet(), bitmaps: new WeakSet()
+  };
+
+  return () => {
+    if (!root.parentNode) return true;
+    let leaf = root;
+    while (leaf.lastElementChild) leaf = leaf.lastElementChild;
+    const manuallyOwned = !leaf.components?.geometry && leaf.object3DMap?.mesh;
+    if (manuallyOwned) leaf.object3DMap.mesh.traverse((object) => disposeObject(object, released));
+    leaf.remove();
+    return leaf === root;
+  };
 }

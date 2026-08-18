@@ -1,14 +1,28 @@
 import { desiredTier, sourceForTier, TEXTURE_LIMITS } from './texture-policy.js';
 
+const DEFAULT_RETRY_DELAYS = [1000, 5000];
+
 export class ProgressiveTextureManager {
-  constructor({ camera, scheduler = null, isRoomActive = () => true, onError = console.warn }) {
+  constructor({
+    camera,
+    scheduler = null,
+    isRoomActive = () => true,
+    onError = console.warn,
+    now = () => performance.now(),
+    retryDelays = DEFAULT_RETRY_DELAYS
+  }) {
     this.camera = camera;
     this.scheduler = scheduler;
     this.isRoomActive = isRoomActive;
     this.onError = onError;
+    this.now = now;
+    this.retryDelays = retryDelays;
     this.items = new Map();
     this.blobCache = new Map();
-    this.lastTick = performance.now();
+    this.failedSources = new Map();
+    this.countedFailures = new WeakSet();
+    this.reportedFailures = new WeakSet();
+    this.lastTick = this.now();
     this.originalOwners = new Set();
     this.tmpPosition = new THREE.Vector3();
     this.tmpDirection = new THREE.Vector3();
@@ -20,9 +34,9 @@ export class ProgressiveTextureManager {
     this.disposeSequence = 0;
   }
 
-  register({ id, roomId, plane, frame, sources }) {
+  register({ id, roomId, plane, frame, sources, label = id }) {
     const item = {
-      id, roomId, plane, frame, sources, tier: null, requestedTier: null,
+      id, roomId, plane, frame, sources, label, tier: null, requestedTier: null,
       texture: null, gazeMs: 0, gazeLostMs: 0, loading: false, disposed: false, lowReady: null
     };
     this.items.set(id, item);
@@ -34,17 +48,43 @@ export class ProgressiveTextureManager {
     this.roomPriorities.set(roomId, priority);
   }
 
-  async waitForRoomLow(roomId) {
-    const pending = [...this.items.values()].filter((item) => item.roomId === roomId).map((item) => item.lowReady).filter(Boolean);
-    await Promise.allSettled(pending);
+  async waitForRoomLow(roomId, onProgress = null) {
+    const items = [...this.items.values()].filter((item) => item.roomId === roomId && item.lowReady);
+    const waiting = items.filter((item) => !item.tier);
+    const settled = new Set(items.filter((item) => item.tier));
+    const report = (lastItem = null) => {
+      const next = waiting.find((item) => !settled.has(item));
+      const completed = settled.size;
+      onProgress?.({
+        roomId,
+        label: next?.label || lastItem?.label || '',
+        completed,
+        total: items.length,
+        progress: items.length ? completed / items.length : 1
+      });
+    };
+    report();
+    await Promise.allSettled(waiting.map(async (item) => {
+      try {
+        await item.lowReady;
+      } finally {
+        settled.add(item);
+        report(item);
+      }
+    }));
   }
 
   async fetchBlob(url) {
     if (!this.blobCache.has(url)) {
       this.blobCache.set(url, fetch(url, { mode: 'cors', credentials: 'omit' }).then((response) => {
-        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        if (!response.ok) {
+          const error = new Error(`${response.status} ${response.statusText}`);
+          error.retryable = response.status === 408 || response.status === 429 || response.status >= 500;
+          throw error;
+        }
         return response.blob();
       }).catch((error) => {
+        if (error.retryable === undefined && error instanceof TypeError) error.retryable = true;
         this.blobCache.delete(url);
         throw error;
       }));
@@ -91,13 +131,15 @@ export class ProgressiveTextureManager {
   async requestTier(item, tier) {
     if (item.disposed || item.loading || item.tier === tier || item.requestedTier === tier) return;
     if (tier === 'original' && !this.originalOwners.has(item.id) && this.originalOwners.size >= TEXTURE_LIMITS.maxOriginalTextures) return;
+    const source = sourceForTier(item.sources, tier);
+    if (!this.canRequestSource(source.url)) return;
     item.loading = true;
     item.requestedTier = tier;
     if (tier === 'original') this.originalOwners.add(item.id);
     let texture = null;
     try {
-      const source = sourceForTier(item.sources, tier);
       texture = await this.createTexture(source.url, source.maxEdge);
+      this.failedSources.delete(source.url);
       const commit = () => this.commitTexture(item, tier, texture);
       if (this.scheduler) {
         const task = this.scheduler.enqueue({
@@ -114,11 +156,38 @@ export class ProgressiveTextureManager {
         texture.dispose();
       }
       if (tier === 'original') this.originalOwners.delete(item.id);
-      if (error.name !== 'AbortError') this.onError(`照片加载失败：${item.sources[tier] || item.sources.original}`, error);
+      if (error.name !== 'AbortError') {
+        const failure = this.recordFailure(source.url, error);
+        if (!this.reportedFailures.has(error)) {
+          this.reportedFailures.add(error);
+          const suffix = failure.exhausted
+            ? '；已停止自动重试。'
+            : `；将在稍后重试（${failure.attempts}/${this.retryDelays.length + 1}）。`;
+          this.onError(`照片加载失败：${source.url}${suffix}`, error);
+        }
+      }
     } finally {
       item.loading = false;
       item.requestedTier = null;
     }
+  }
+
+  canRequestSource(url) {
+    const failure = this.failedSources.get(url);
+    return !failure || (!failure.exhausted && this.now() >= failure.nextRetryAt);
+  }
+
+  recordFailure(url, error) {
+    const previous = this.failedSources.get(url) || { attempts: 0 };
+    if (this.countedFailures.has(error)) return previous;
+    this.countedFailures.add(error);
+    const attempts = previous.attempts + 1;
+    const retryable = error.retryable === true;
+    const exhausted = !retryable || attempts > this.retryDelays.length;
+    const nextRetryAt = exhausted ? Number.POSITIVE_INFINITY : this.now() + this.retryDelays[attempts - 1];
+    const failure = { attempts, exhausted, nextRetryAt };
+    this.failedSources.set(url, failure);
+    return failure;
   }
 
   commitTexture(item, tier, texture) {
@@ -161,7 +230,7 @@ export class ProgressiveTextureManager {
     if (item.frame) item.frame.setAttribute('geometry', `primitive: box; width: ${fittedWidth + 0.12}; height: ${fittedHeight + 0.12}; depth: 0.055`);
   }
 
-  tick(now = performance.now()) {
+  tick(now = this.now()) {
     if (!this.camera) return;
     const delta = Math.min(1000, now - this.lastTick);
     this.lastTick = now;
@@ -202,5 +271,6 @@ export class ProgressiveTextureManager {
   dispose() {
     for (const id of [...this.items.keys()]) this.disposeItem(id, { immediate: true });
     this.blobCache.clear();
+    this.failedSources.clear();
   }
 }

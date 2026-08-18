@@ -9,6 +9,29 @@ class Vector3 {
 }
 
 describe('progressive texture scheduling', () => {
+  it('reports the current photo name and completed count while waiting for room previews', async () => {
+    globalThis.THREE = { Vector3 };
+    const first = Promise.resolve();
+    let finishSecond;
+    const second = new Promise((resolve) => { finishSecond = resolve; });
+    const manager = new ProgressiveTextureManager({ camera: null });
+    manager.items.set('first', {
+      id: 'first', roomId: 'gallery', label: '海边日落', tier: null, lowReady: first
+    });
+    manager.items.set('second', {
+      id: 'second', roomId: 'gallery', label: '山间小路', tier: null, lowReady: second
+    });
+    const updates = [];
+
+    const waiting = manager.waitForRoomLow('gallery', (status) => updates.push(status));
+    await Promise.resolve();
+    expect(updates[0]).toMatchObject({ label: '海边日落', completed: 0, total: 2, progress: 0 });
+    expect(updates).toContainEqual(expect.objectContaining({ label: '山间小路', completed: 1, total: 2, progress: .5 }));
+    finishSecond();
+    await waiting;
+    expect(updates.at(-1)).toMatchObject({ label: '山间小路', completed: 2, total: 2, progress: 1 });
+  });
+
   it('does not mutate the scene before the scheduled commit runs', async () => {
     globalThis.THREE = { Vector3, SRGBColorSpace: 'srgb', MathUtils: { radToDeg: (value) => value } };
     const queued = [];
@@ -44,5 +67,49 @@ describe('progressive texture scheduling', () => {
     await request;
     expect(material.map).toBe(texture);
     expect(item.tier).toBe('low');
+  });
+
+  it('backs off network failures and stops after three attempts', async () => {
+    globalThis.THREE = { Vector3, SRGBColorSpace: 'srgb', MathUtils: { radToDeg: (value) => value } };
+    let now = 0;
+    const onError = vi.fn();
+    const manager = new ProgressiveTextureManager({ camera: null, onError, now: () => now });
+    manager.createTexture = vi.fn(() => Promise.reject(Object.assign(new TypeError('Failed to fetch'), { retryable: true })));
+    const item = {
+      id: 'photo', roomId: 'room', plane: {}, frame: null, sources: { original: '/photo.jpg' },
+      tier: null, requestedTier: null, texture: null, loading: false, disposed: false
+    };
+
+    await manager.requestTier(item, 'low');
+    await manager.requestTier(item, 'low');
+    expect(manager.createTexture).toHaveBeenCalledTimes(1);
+
+    now = 1000;
+    await manager.requestTier(item, 'low');
+    now = 6000;
+    await manager.requestTier(item, 'low');
+    now = 60000;
+    await manager.requestTier(item, 'low');
+
+    expect(manager.createTexture).toHaveBeenCalledTimes(3);
+    expect(onError).toHaveBeenCalledTimes(3);
+    expect(onError.mock.calls[2][0]).toContain('已停止自动重试');
+  });
+
+  it('does not retry permanent HTTP or decode failures', async () => {
+    globalThis.THREE = { Vector3, SRGBColorSpace: 'srgb', MathUtils: { radToDeg: (value) => value } };
+    let now = 0;
+    const manager = new ProgressiveTextureManager({ camera: null, now: () => now, onError: vi.fn() });
+    manager.createTexture = vi.fn(() => Promise.reject(Object.assign(new Error('404 Not Found'), { retryable: false })));
+    const item = {
+      id: 'missing', roomId: 'room', plane: {}, frame: null, sources: { original: '/missing.jpg' },
+      tier: null, requestedTier: null, texture: null, loading: false, disposed: false
+    };
+
+    await manager.requestTier(item, 'low');
+    now = 60000;
+    await manager.requestTier(item, 'low');
+
+    expect(manager.createTexture).toHaveBeenCalledOnce();
   });
 });
