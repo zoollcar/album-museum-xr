@@ -7,6 +7,11 @@ const SIGN_STYLES = {
   section: { background: 'transparent', color: '#3a312a', accent: '#765b3d', titleSize: 66, bodySize: 42, border: null }
 };
 
+let signageWorker = null;
+let signageRequestId = 0;
+const workerRequests = new Map();
+const pendingByRoom = new Map();
+
 function wrapCanvasText(context, text, maxWidth) {
   if (!text) return [];
   const rows = [];
@@ -75,15 +80,104 @@ function makeTextCanvas({
   return texture;
 }
 
+function roomIdFor(parent) {
+  return parent.closest?.('[data-room-id]')?.dataset.roomId || null;
+}
+
+function trackRoomPromise(roomId, promise) {
+  if (!roomId) return;
+  if (!pendingByRoom.has(roomId)) pendingByRoom.set(roomId, new Set());
+  pendingByRoom.get(roomId).add(promise);
+  promise.finally(() => {
+    const pending = pendingByRoom.get(roomId);
+    pending?.delete(promise);
+    if (!pending?.size) pendingByRoom.delete(roomId);
+  });
+}
+
+function getSignageWorker() {
+  if (signageWorker || typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined') return signageWorker;
+  signageWorker = new Worker(new URL('./signage-worker.js', import.meta.url), { type: 'module' });
+  signageWorker.addEventListener('message', ({ data }) => {
+    const request = workerRequests.get(data.id);
+    if (!request) return;
+    workerRequests.delete(data.id);
+    if (data.error) request.reject(new Error(data.error));
+    else request.resolve(data.bitmap);
+  });
+  signageWorker.addEventListener('error', (error) => {
+    for (const request of workerRequests.values()) request.reject(error);
+    workerRequests.clear();
+    signageWorker?.terminate();
+    signageWorker = null;
+  });
+  return signageWorker;
+}
+
+function renderInWorker(options) {
+  const worker = getSignageWorker();
+  if (!worker) return null;
+  const id = ++signageRequestId;
+  const promise = new Promise((resolve, reject) => workerRequests.set(id, { resolve, reject }));
+  worker.postMessage({ id, options });
+  return promise;
+}
+
+export async function waitForRoomSignage(roomId) {
+  while (pendingByRoom.get(roomId)?.size) await Promise.allSettled([...pendingByRoom.get(roomId)]);
+}
+
 export function textPlane(parent, options) {
   const plane = entity('a-entity', { position: options.position, rotation: options.rotation }, parent);
-  const texture = makeTextCanvas(options);
+  const workerRender = renderInWorker(options);
+  const texture = workerRender ? null : makeTextCanvas(options);
   const material = new THREE.MeshBasicMaterial({
-    map: texture, transparent: true, side: THREE.DoubleSide, toneMapped: false,
+    map: texture, color: texture ? '#ffffff' : '#000000', transparent: true, side: THREE.DoubleSide, toneMapped: false,
     depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2
   });
   plane.setObject3D('mesh', new THREE.Mesh(new THREE.PlaneGeometry(options.width, options.height), material));
   plane.dataset.canvasTexture = 'true';
   plane.dataset.signStyle = options.signStyle || 'wall-label';
+  if (workerRender) {
+    const roomId = roomIdFor(parent);
+    const complete = workerRender.then((bitmap) => {
+      const commit = () => {
+        if (!plane.isConnected) { bitmap.close?.(); return; }
+        const nextTexture = new THREE.Texture(bitmap);
+        nextTexture.colorSpace = THREE.SRGBColorSpace;
+        nextTexture.needsUpdate = true;
+        nextTexture.userData.imageBitmap = bitmap;
+        material.map = nextTexture;
+        material.color.set('#ffffff');
+        material.needsUpdate = true;
+      };
+      const scheduler = window.museumApp?.scheduler;
+      if (!scheduler) { commit(); return; }
+      return scheduler.enqueue({
+        id: `signage:${roomId || 'shared'}:${signageRequestId++}`,
+        owner: `room:${roomId || 'shared'}`,
+        priority: 'background',
+        steps: [{ label: '生成说明', run: commit }]
+      }).promise;
+    }).catch((error) => {
+      console.warn('文字纹理后台生成失败，使用主线程回退。', error);
+      const fallback = () => {
+        if (!plane.isConnected) return;
+        const fallbackTexture = makeTextCanvas(options);
+        material.map = fallbackTexture;
+        material.color.set('#ffffff');
+        material.needsUpdate = true;
+      };
+      const scheduler = window.museumApp?.scheduler;
+      if (scheduler) return scheduler.enqueue({
+        id: `signage-fallback:${roomId || 'shared'}:${signageRequestId++}`,
+        owner: `room:${roomId || 'shared'}`,
+        priority: 'background',
+        steps: [{ label: '生成说明', run: fallback }]
+      }).promise;
+      fallback();
+    });
+    trackRoomPromise(roomId, complete);
+  }
   return plane;
 }

@@ -27,14 +27,19 @@ export function box(parent, {
   return el;
 }
 
-export function disposeTree(root) {
-  root.object3D?.traverse((object) => {
-    object.geometry?.dispose?.();
-    if (!object.material) return;
-    const materials = Array.isArray(object.material) ? object.material : [object.material];
-    materials.forEach((material) => {
-      if (material.map && !material.map.userData?.managedProgressive) material.map.dispose?.();
-      material.dispose?.();
-    });
+export function disposeObject(object) {
+  object.geometry?.dispose?.();
+  if (!object.material) return;
+  const materials = Array.isArray(object.material) ? object.material : [object.material];
+  materials.forEach((material) => {
+    if (material.map && !material.map.userData?.managedProgressive) {
+      material.map.userData?.imageBitmap?.close?.();
+      material.map.dispose?.();
+    }
+    material.dispose?.();
   });
+}
+
+export function disposeTree(root) {
+  root.object3D?.traverse(disposeObject);
 }

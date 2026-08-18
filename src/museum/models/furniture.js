@@ -72,19 +72,25 @@ export function buildFloorLamp(parent, position) {
   return group;
 }
 
-export function buildDecorCollection(parent, template, themeId) {
+export function decorCollectionSteps(parent, template, themeId) {
   const x = template.width / 2 - 1.05;
   const z = -template.depth / 2 + 1.05;
+  const steps = [];
   if (themeId === 'botanical') {
-    buildArchiveCabinet(parent, `0 0 ${-template.depth / 2 + .38}`);
-    buildDisplayCase(parent, `${-x} 0 ${z}`, { accent: '#7a715d', artifact: 'stone' });
+    steps.push(() => buildArchiveCabinet(parent, `0 0 ${-template.depth / 2 + .38}`));
+    steps.push(() => buildDisplayCase(parent, `${-x} 0 ${z}`, { accent: '#7a715d', artifact: 'stone' }));
   } else if (themeId === 'art-deco') {
-    buildSculpturePlinth(parent, `${-x} 0 ${z}`);
-    buildFloorLamp(parent, `${x} 0 ${z}`);
-    buildDisplayCase(parent, `${x} 0 ${template.depth / 2 - 1.15}`, { accent: '#5d4a35', artifact: 'vessel' });
+    steps.push(() => buildSculpturePlinth(parent, `${-x} 0 ${z}`));
+    steps.push(() => buildFloorLamp(parent, `${x} 0 ${z}`));
+    steps.push(() => buildDisplayCase(parent, `${x} 0 ${template.depth / 2 - 1.15}`, { accent: '#5d4a35', artifact: 'vessel' }));
   } else if (themeId === 'terrazzo') {
-    buildSculpturePlinth(parent, `${-x} 0 ${z}`);
+    steps.push(() => buildSculpturePlinth(parent, `${-x} 0 ${z}`));
   } else if (template.kind === 'lobby') {
-    buildDisplayCase(parent, '0 0 -4.7', { accent: '#846f56', artifact: 'stone' });
+    steps.push(() => buildDisplayCase(parent, '0 0 -4.7', { accent: '#846f56', artifact: 'stone' }));
   }
+  return steps;
+}
+
+export function buildDecorCollection(parent, template, themeId) {
+  for (const step of decorCollectionSteps(parent, template, themeId)) step();
 }

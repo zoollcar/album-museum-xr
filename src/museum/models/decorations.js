@@ -76,27 +76,33 @@ export function buildRopeBarrier(parent, position, rotation = '0 0 0') {
   return group;
 }
 
-export function buildAdditionalDecor(parent, template, themeId) {
+export function additionalDecorSteps(parent, template, themeId) {
   const x = template.width / 2 - 1.15;
   const northZ = -template.depth / 2 + 1.2;
   const southZ = template.depth / 2 - 1.25;
+  const steps = [];
   if (template.kind === 'lobby') {
-    buildGalleryRug(parent, '0 .018 2.2', 4.8, 3.1);
-    buildRopeBarrier(parent, '0 0 -3.75');
-    return;
+    steps.push(() => buildGalleryRug(parent, '0 .018 2.2', 4.8, 3.1));
+    steps.push(() => buildRopeBarrier(parent, '0 0 -3.75'));
+    return steps;
   }
   if (themeId === 'botanical') {
-    buildCeladonVesselGroup(parent, `${x - .2} 0 ${northZ}`);
-    buildMarbleBust(parent, `${-x} 0 ${southZ}`, '0 28 0');
+    steps.push(() => buildCeladonVesselGroup(parent, `${x - .2} 0 ${northZ}`));
+    steps.push(() => buildMarbleBust(parent, `${-x} 0 ${southZ}`, '0 28 0'));
   } else if (themeId === 'art-deco') {
-    buildGalleryRug(parent, '0 .018 0', 4.6, 3.35);
-    buildArmillarySphere(parent, `${-x} 0 ${southZ}`);
+    steps.push(() => buildGalleryRug(parent, '0 .018 0', 4.6, 3.35));
+    steps.push(() => buildArmillarySphere(parent, `${-x} 0 ${southZ}`));
   } else if (themeId === 'modern') {
-    buildMarbleBust(parent, `${-x} 0 ${northZ}`, '0 24 0');
-    buildCeladonVesselGroup(parent, `${x - .2} 0 ${northZ}`);
+    steps.push(() => buildMarbleBust(parent, `${-x} 0 ${northZ}`, '0 24 0'));
+    steps.push(() => buildCeladonVesselGroup(parent, `${x - .2} 0 ${northZ}`));
   } else {
-    buildGalleryRug(parent, '0 .018 0', 4.25, 3.05);
-    buildMarbleBust(parent, `${-x} 0 ${northZ}`, '0 24 0');
-    buildArmillarySphere(parent, `${x} 0 ${northZ}`);
+    steps.push(() => buildGalleryRug(parent, '0 .018 0', 4.25, 3.05));
+    steps.push(() => buildMarbleBust(parent, `${-x} 0 ${northZ}`, '0 24 0'));
+    steps.push(() => buildArmillarySphere(parent, `${x} 0 ${northZ}`));
   }
+  return steps;
+}
+
+export function buildAdditionalDecor(parent, template, themeId) {
+  for (const step of additionalDecorSteps(parent, template, themeId)) step();
 }

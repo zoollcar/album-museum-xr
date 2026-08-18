@@ -23,8 +23,9 @@ export function registerMuseumComponents() {
     init() {
       this.lastValid = this.el.object3D.position.clone();
     },
-    tick() {
+    tick(time) {
       const app = window.museumApp;
+      app?.frame?.(time);
       if (!app?.ready) return;
       const position = this.el.object3D.position;
       if (app.isWalkable(position.x, position.z)) this.lastValid.copy(position);
