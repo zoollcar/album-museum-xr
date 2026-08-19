@@ -13,7 +13,7 @@ WebXR 在正式环境中需要 HTTPS。桌面端使用鼠标观察、WASD 行走
 
 ## 配置博物馆
 
-所有内置博物馆放在 `public/museums/`；在 `public/museums/index.json` 中添加一项，欢迎页便会自动显示。当前示例配置为 `public/museums/travel-museum.json`。也可通过查询参数加载另一份配置：
+所有内置博物馆放在 `public/museums/`；在 `public/museums/index.json` 中添加一项，欢迎页便会自动显示。当前示例配置为 `public/museums/project-showcase.json`。也可通过查询参数加载另一份配置：
 
 ```text
 https://museum.example.com/?config=https://static.example.com/my-museum.json

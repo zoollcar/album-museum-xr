@@ -283,10 +283,10 @@ async function check(input) {
 
 const inputs = process.argv.slice(2);
 if (inputs.includes('--help') || inputs.includes('-h')) {
-  console.log('用法：node check-museum-json.mjs [museum.json ...]\n省略路径时检查 public/museums/travel-museum.json；使用 - 从 stdin 读取。');
+  console.log('用法：node check-museum-json.mjs [museum.json ...]\n省略路径时检查 public/museums/project-showcase.json；使用 - 从 stdin 读取。');
   process.exit(0);
 }
-const targets = inputs.length ? inputs : ['public/museums/travel-museum.json'];
+const targets = inputs.length ? inputs : ['public/museums/project-showcase.json'];
 const results = [];
 for (const target of targets) results.push(await check(target));
 if (results.some((valid) => !valid)) process.exitCode = 1;
