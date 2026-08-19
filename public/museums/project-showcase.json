@@ -1,0 +1,1073 @@
+{
+  "version": 1,
+  "museum": {
+    "title": "The Living JSON Museum",
+    "subtitle": "A walkable guide to the project behind the galleries",
+    "intro": "Explore how AI-assisted authoring, pure JSON, reusable room templates, progressive media, and WebXR become a complete museum.",
+    "heroImage": {
+      "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-156538-original.webp",
+      "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-156538-medium.webp",
+      "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-156538-low.webp"
+    },
+    "backgroundMusic": {
+      "url": "https://album-museum-xr-img.hitorisama.org/demo/audio/contemplation.mp3",
+      "volume": 0.24
+    },
+    "lobby": {
+      "id": "lobby",
+      "template": "lobby-atrium",
+      "theme": "classic",
+      "doorStyle": "modern-ash",
+      "elevatorDoorStyle": "elevator-brushed"
+    }
+  },
+  "rooms": [
+    {
+      "id": "json-foundation",
+      "template": "gallery-small",
+      "theme": "classic",
+      "doorStyle": "classic-oak",
+      "title": "JSON Foundation",
+      "intro": "A portable, strict content model turns a collection into a museum.",
+      "blocks": [
+        {
+          "title": "Portable Structure",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-156538-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-156538-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-156538-low.webp"
+              },
+              "title": "One File, One Museum",
+              "description": "A complete museum begins as one portable JSON document.",
+              "alt": "A grand, double-height room with wood paneling, stenciled wall patterns, four hexagonal columns, and an interior balcony with guardrail at left."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-60898-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-60898-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-60898-low.webp"
+              },
+              "title": "Content Is the Source",
+              "description": "Titles, rooms, photos, and connections live in data.",
+              "alt": "A work made of limestone with carved decoration."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-9-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-9-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-9-low.webp"
+              },
+              "title": "Versioned by Design",
+              "description": "The version field keeps the format explicit and stable.",
+              "alt": "A work made of oil on canvas."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-36536-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-36536-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-36536-low.webp"
+              },
+              "title": "A Named Lobby",
+              "description": "Every visit starts from a declared lobby template.",
+              "alt": "A circular decoration with a central cross and radiating organic motifs composed of natural and geometric forms."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-12765-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-12765-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-12765-low.webp"
+              },
+              "title": "Rooms as Records",
+              "description": "Each gallery is a small object with a clear purpose.",
+              "alt": "A T-shaped architectural fragment with ornate geometric patterning consisting of repeating ellipses and some foliage detail."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-103303-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-103303-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-103303-low.webp"
+              },
+              "title": "Blocks Curate Stories",
+              "description": "Blocks group photographs into readable chapters.",
+              "alt": "A work made of molded terracotta with traces of slip pigment."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-102611-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-102611-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-102611-low.webp"
+              },
+              "title": "Photos Carry Meaning",
+              "description": "Every image can include a title, description, and alt text.",
+              "alt": "Wooden sculpture of seated king surrounded by family."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86646-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86646-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86646-low.webp"
+              },
+              "title": "Three Image Tiers",
+              "description": "Original, medium, and low sources balance detail and speed.",
+              "alt": "A work made of wood."
+            }
+          ]
+        },
+        {
+          "title": "Content Graph",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-38861-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-38861-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-38861-low.webp"
+              },
+              "title": "Connections Form a Graph",
+              "description": "Doors link room endpoints without embedding geometry.",
+              "alt": "A white iron grille fragment with a webbed ornamental foliage motif."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-15692-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-15692-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-15692-low.webp"
+              },
+              "title": "Layout Stays Automatic",
+              "description": "Runtime layout turns the content graph into a building.",
+              "alt": "A work made of painted plaster."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-111030-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-111030-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-111030-low.webp"
+              },
+              "title": "No Coordinates Required",
+              "description": "Authors describe intent instead of placing 3D walls.",
+              "alt": "A work made of terracotta and pigment."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-145522-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-145522-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-145522-low.webp"
+              },
+              "title": "Strict Schema, Clear Errors",
+              "description": "Unknown fields and invalid values are rejected early.",
+              "alt": "A work made of terracotta."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-28143-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-28143-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-28143-low.webp"
+              },
+              "title": "Portable and Reviewable",
+              "description": "JSON works well with diffs, reviews, and version control.",
+              "alt": "A work made of oil on canvas."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86387-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86387-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86387-low.webp"
+              },
+              "title": "Remote Media Ready",
+              "description": "Photo URLs can point to CORS-enabled object storage.",
+              "alt": "A work made of bronze."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-43945-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-43945-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-43945-low.webp"
+              },
+              "title": "English by Configuration",
+              "description": "Visitor-facing language is authored entirely in JSON.",
+              "alt": "A work made of carved oak."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-23119-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-23119-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-23119-low.webp"
+              },
+              "title": "A Museum You Can Fork",
+              "description": "Replace the content and keep the same runtime engine.",
+              "alt": "A work made of pen and brown ink, heightened with opaque white watercolor and touches of pink and yellow watercolor, over black chalk, on blue tinted laid paper, laid down on laid paper."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "skill-studio",
+      "template": "gallery-medium",
+      "theme": "botanical",
+      "doorStyle": "sage-panel",
+      "title": "AI Skill Studio",
+      "intro": "See how an AI Skill plans, writes, and validates a museum from a brief.",
+      "blocks": [
+        {
+          "title": "Generate with Intent",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-23119-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-23119-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-23119-low.webp"
+              },
+              "title": "Brief In, Museum Out",
+              "description": "The AI Skill turns a curatorial brief into valid museum JSON.",
+              "alt": "A work made of pen and brown ink, heightened with opaque white watercolor and touches of pink and yellow watercolor, over black chalk, on blue tinted laid paper, laid down on laid paper."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-874-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-874-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-874-low.webp"
+              },
+              "title": "Contract-Aware Generation",
+              "description": "The Skill reads the same rules enforced by the runtime.",
+              "alt": "Painting of linens drying on a fence in a field under a dark, overcast sky, a dirt road at left leading to a small village."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-90048-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-90048-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-90048-low.webp"
+              },
+              "title": "Conservative Metadata",
+              "description": "It avoids inventing dates, places, or unsupported facts.",
+              "alt": "Painting of a vast autumn scene with two very small figures in Indigenous clothing standing on a cliff overlooking a massive waterfall in the distance."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-146701-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-146701-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-146701-low.webp"
+              },
+              "title": "Template Selection",
+              "description": "The Skill matches room size to the intended collection.",
+              "alt": "Painting of a small stream in the middle of the woods. In the center of the painting, there is a small waterfall over a large boulder. Radiant beams of sunlight penetrate the thick forest of birch and other trees, and a small bird sings from a broken branch over the waterfall."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-68792-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-68792-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-68792-low.webp"
+              },
+              "title": "Capacity Planning",
+              "description": "Photo and block limits are checked before delivery.",
+              "alt": "A work made of oil on canvas."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-138-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-138-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-138-low.webp"
+              },
+              "title": "Reachability Planning",
+              "description": "Every gallery receives a route back to the lobby.",
+              "alt": "Painting of a young woman outdoors in a light purple dress and head covering with a wooden yoke around her neck suspending large bundles of brightly colored flowers. She stands on a path adjacent to a river, facing the wall of a red-brick house at right."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-120163-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-120163-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-120163-low.webp"
+              },
+              "title": "Door Inventory Checks",
+              "description": "Only real door slots may appear in connections.",
+              "alt": "A work made of oil on canvas."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-64715-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-64715-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-64715-low.webp"
+              },
+              "title": "Unique IDs",
+              "description": "Room and door references stay stable across the graph.",
+              "alt": "A work made of oil on canvas."
+            }
+          ]
+        },
+        {
+          "title": "Validate with Confidence",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-57163-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-57163-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-57163-low.webp"
+              },
+              "title": "Theme Selection",
+              "description": "Classic, botanical, art-deco, and terrazzo set the mood.",
+              "alt": "A work made of oil on canvas."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-27992-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-27992-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-27992-low.webp"
+              },
+              "title": "Door Style Selection",
+              "description": "Door materials can reinforce each room theme.",
+              "alt": "Large painting of people in a crowded park, brushstrokes are dots."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-87008-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-87008-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-87008-low.webp"
+              },
+              "title": "Progressive Sources",
+              "description": "The Skill prefers three image sizes for substantial albums.",
+              "alt": "A work made of color woodblock print; oban."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-68388-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-68388-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-68388-low.webp"
+              },
+              "title": "Accessible Alt Text",
+              "description": "Descriptions are written for people who cannot see the image.",
+              "alt": "A work made of oil on canvas."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-863-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-863-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-863-low.webp"
+              },
+              "title": "Human-Readable Labels",
+              "description": "Short English copy remains legible beneath each frame.",
+              "alt": "Painting of a resting man and woman with assorted livestock, arched ruins and a lush landscape behind them."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-2144-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-2144-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-2144-low.webp"
+              },
+              "title": "No Placeholder Doors",
+              "description": "Unused connections are omitted instead of faked.",
+              "alt": "A work made of mezzotint on paper."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-893-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-893-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-893-low.webp"
+              },
+              "title": "Validation Before Handoff",
+              "description": "A zero-dependency checker verifies the finished file.",
+              "alt": "A work made of oil on panel."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-2122-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-2122-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-2122-low.webp"
+              },
+              "title": "Runtime Parity",
+              "description": "The checker stays aligned with schema and templates.",
+              "alt": "A work made of mezzotint on paper."
+            }
+          ]
+        },
+        {
+          "title": "Publish with Traceability",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10022-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10022-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10022-low.webp"
+              },
+              "title": "Fast Iteration",
+              "description": "Change the brief, regenerate JSON, and preview again.",
+              "alt": "Wood statue of a standing Virgin Mary with a circle of stars around her head, arms crossed over her chest, robes draping off to her right, supported by a baby angel in a star-covered swaddle at the base."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-129-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-129-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-129-low.webp"
+              },
+              "title": "Curatorial Structure",
+              "description": "Rooms and blocks preserve the intended narrative order.",
+              "alt": "Small iron sculpture of a dragon with a serpentine body, legs with talons, and long tail, all made of moveable joints."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-157021-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-157021-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-157021-low.webp"
+              },
+              "title": "Reusable Workflow",
+              "description": "The same Skill can build travel, family, or project museums.",
+              "alt": "A work made of glass."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-69901-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-69901-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-69901-low.webp"
+              },
+              "title": "Safe Defaults",
+              "description": "Optional fields degrade gracefully when they are absent.",
+              "alt": "A work made of blown glass with enamel and gilt decoration."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-146866-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-146866-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-146866-low.webp"
+              },
+              "title": "Source Traceability",
+              "description": "Open-access assets keep their source and license records.",
+              "alt": "A work made of mahogany, purpleheart, ebony, harewood, holly, brass, and modern upholstery."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-46253-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-46253-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-46253-low.webp"
+              },
+              "title": "Local Processing First",
+              "description": "Images are downloaded and optimized before publishing.",
+              "alt": "A work made of gilt copper, champlevé enamel over wood core."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-8254-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-8254-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-8254-low.webp"
+              },
+              "title": "Bucket Publishing",
+              "description": "Generated media paths are ready for a public object store.",
+              "alt": "A work made of silver gilt over a wooden core; foot: copper gilt."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10520-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10520-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10520-low.webp"
+              },
+              "title": "From Prompt to Place",
+              "description": "The result is data that becomes a walkable exhibition.",
+              "alt": "Glazed earthenware plate decorated with stylized leaves and flowers in red, yellow, green, dark blue, and white."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "template-gallery",
+      "template": "gallery-large",
+      "theme": "art-deco",
+      "doorStyle": "deco-walnut",
+      "title": "Template Gallery",
+      "intro": "Room templates compose geometry, themes, capacity, doors, and signage.",
+      "blocks": [
+        {
+          "title": "Room Types",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10022-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10022-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10022-low.webp"
+              },
+              "title": "Small Gallery",
+              "description": "A focused room supports up to sixteen photographs.",
+              "alt": "Wood statue of a standing Virgin Mary with a circle of stars around her head, arms crossed over her chest, robes draping off to her right, supported by a baby angel in a star-covered swaddle at the base."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-129-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-129-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-129-low.webp"
+              },
+              "title": "Medium Gallery",
+              "description": "A balanced room supports up to twenty-four photographs.",
+              "alt": "Small iron sculpture of a dragon with a serpentine body, legs with talons, and long tail, all made of moveable joints."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-157021-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-157021-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-157021-low.webp"
+              },
+              "title": "Large Gallery",
+              "description": "A broad exhibition room supports up to thirty-six photographs.",
+              "alt": "A work made of glass."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-69901-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-69901-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-69901-low.webp"
+              },
+              "title": "Lobby Atrium",
+              "description": "The lobby provides six possible gateways into the museum.",
+              "alt": "A work made of blown glass with enamel and gilt decoration."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-146866-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-146866-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-146866-low.webp"
+              },
+              "title": "Classic Theme",
+              "description": "Warm neutral materials create a familiar gallery atmosphere.",
+              "alt": "A work made of mahogany, purpleheart, ebony, harewood, holly, brass, and modern upholstery."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-46253-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-46253-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-46253-low.webp"
+              },
+              "title": "Botanical Theme",
+              "description": "Organic color and restrained foliage soften the room.",
+              "alt": "A work made of gilt copper, champlevé enamel over wood core."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-8254-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-8254-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-8254-low.webp"
+              },
+              "title": "Art-Deco Theme",
+              "description": "Deep tones and geometric accents create a night-salon mood.",
+              "alt": "A work made of silver gilt over a wooden core; foot: copper gilt."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10520-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10520-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10520-low.webp"
+              },
+              "title": "Terrazzo Theme",
+              "description": "Speckled surfaces give the gallery a modern public character.",
+              "alt": "Glazed earthenware plate decorated with stylized leaves and flowers in red, yellow, green, dark blue, and white."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-25316-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-25316-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-25316-low.webp"
+              },
+              "title": "Classic Oak Doors",
+              "description": "Traditional wood doors suit archival exhibitions.",
+              "alt": "A work made of painted enamel on copper and gilded bronze mounts."
+            }
+          ]
+        },
+        {
+          "title": "Visual Themes",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-198905-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-198905-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-198905-low.webp"
+              },
+              "title": "Sage Panel Doors",
+              "description": "Soft green doors pair naturally with botanical rooms.",
+              "alt": "A work made of oil on canvas."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-109927-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-109927-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-109927-low.webp"
+              },
+              "title": "Deco Walnut Doors",
+              "description": "Dark walnut and metal accents support art-deco spaces.",
+              "alt": "A work made of painted and white wood and clear and opaque leaded-glass insets."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-4643-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-4643-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-4643-low.webp"
+              },
+              "title": "Modern Ash Doors",
+              "description": "Light timber creates a clean contemporary threshold.",
+              "alt": "A work made of wood and paint."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-213-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-213-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-213-low.webp"
+              },
+              "title": "Brushed Elevator Doors",
+              "description": "Metal elevator portals communicate vertical travel.",
+              "alt": "Conical-shaped bowl with sides angled outward, a smooth black interior, and a bumpy exterior that is black along the rim and graduates to a reddish-brown color."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10637-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10637-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-10637-low.webp"
+              },
+              "title": "Bronze Elevator Doors",
+              "description": "Warm bronze reinforces ceremonial transitions.",
+              "alt": "Deep earthenware soup bowl with two swirly designed handles and cover topped with a flower shaped element. The bowl is decorated in black with griffin and palmette pattern on rim and with a scene in an oval depicting a running male figure in a winged helmet handing a baby over to the lady sitting on the ground."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-6471-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-6471-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-6471-low.webp"
+              },
+              "title": "Dark Elevator Doors",
+              "description": "A low-glare finish suits immersive themed spaces.",
+              "alt": "A work made of mahogany and white pine, with mahogany, birch, and maple veneers."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-65795-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-65795-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/template-gallery-65795-low.webp"
+              },
+              "title": "Automatic Mounting",
+              "description": "The runtime distributes frames across available walls.",
+              "alt": "A work made of glass, paint, silver stain, lead."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-156538-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-156538-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-156538-low.webp"
+              },
+              "title": "Block-Aware Ordering",
+              "description": "Curatorial blocks remain ordered while placement stays automatic.",
+              "alt": "A grand, double-height room with wood paneling, stenciled wall patterns, four hexagonal columns, and an interior balcony with guardrail at left."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-60898-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-60898-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-60898-low.webp"
+              },
+              "title": "Adaptive Frame Sizes",
+              "description": "Portrait and landscape images receive suitable mounts.",
+              "alt": "A work made of limestone with carved decoration."
+            }
+          ]
+        },
+        {
+          "title": "Runtime Structure",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-9-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-9-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-9-low.webp"
+              },
+              "title": "Room Title Signage",
+              "description": "Each gallery announces its purpose at the entrance.",
+              "alt": "A work made of oil on canvas."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-36536-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-36536-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-36536-low.webp"
+              },
+              "title": "Section Typography",
+              "description": "Block titles create rhythm across long exhibitions.",
+              "alt": "A circular decoration with a central cross and radiating organic motifs composed of natural and geometric forms."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-12765-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-12765-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-12765-low.webp"
+              },
+              "title": "Wall Labels",
+              "description": "Every framed image can carry concise visitor context.",
+              "alt": "A T-shaped architectural fragment with ornate geometric patterning consisting of repeating ellipses and some foliage detail."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-103303-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-103303-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-103303-low.webp"
+              },
+              "title": "Procedural Decoration",
+              "description": "Visible details are generated from reusable geometry.",
+              "alt": "A work made of molded terracotta with traces of slip pigment."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-102611-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-102611-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-102611-low.webp"
+              },
+              "title": "Shared Materials",
+              "description": "The renderer reuses resources to control GPU cost.",
+              "alt": "Wooden sculpture of seated king surrounded by family."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86646-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86646-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86646-low.webp"
+              },
+              "title": "Collision Surfaces",
+              "description": "Walls, doors, and furniture remain physically solid.",
+              "alt": "A work made of wood."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-38861-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-38861-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-38861-low.webp"
+              },
+              "title": "Closed-Door Invariant",
+              "description": "A closed door blocks movement until loading is ready.",
+              "alt": "A white iron grille fragment with a webbed ornamental foliage motif."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-15692-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-15692-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-15692-low.webp"
+              },
+              "title": "In-World Progress",
+              "description": "Door signage reports preparation without breaking immersion.",
+              "alt": "A work made of painted plaster."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-111030-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-111030-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-111030-low.webp"
+              },
+              "title": "Connector Selection",
+              "description": "The layout can choose direct links, corridors, or elevators.",
+              "alt": "A work made of terracotta and pigment."
+            }
+          ]
+        },
+        {
+          "title": "Composition Rules",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-145522-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-145522-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-145522-low.webp"
+              },
+              "title": "Graph Before Geometry",
+              "description": "Connections express relationships, not coordinates.",
+              "alt": "A work made of terracotta."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-28143-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-28143-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-28143-low.webp"
+              },
+              "title": "Theme Without Code",
+              "description": "Authors restyle rooms with a single JSON enum.",
+              "alt": "A work made of oil on canvas."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86387-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86387-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-86387-low.webp"
+              },
+              "title": "Capacity Without Guessing",
+              "description": "Each template publishes its block and photo limits.",
+              "alt": "A work made of bronze."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-43945-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-43945-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/json-foundation-43945-low.webp"
+              },
+              "title": "Reusable Models",
+              "description": "Doors, frames, benches, and signs remain separate components.",
+              "alt": "A work made of carved oak."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-23119-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-23119-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-23119-low.webp"
+              },
+              "title": "Predictable Composition",
+              "description": "Template rules keep generated museums coherent.",
+              "alt": "A work made of pen and brown ink, heightened with opaque white watercolor and touches of pink and yellow watercolor, over black chalk, on blue tinted laid paper, laid down on laid paper."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-874-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-874-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-874-low.webp"
+              },
+              "title": "Expandable Collections",
+              "description": "Add another room without redesigning the whole building.",
+              "alt": "Painting of linens drying on a fence in a field under a dark, overcast sky, a dirt road at left leading to a small village."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-90048-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-90048-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-90048-low.webp"
+              },
+              "title": "Content-Led Architecture",
+              "description": "The collection determines the shape of the visit.",
+              "alt": "Painting of a vast autumn scene with two very small figures in Indigenous clothing standing on a cliff overlooking a massive waterfall in the distance."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-146701-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-146701-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-146701-low.webp"
+              },
+              "title": "A Living Example",
+              "description": "This room demonstrates the largest gallery at full capacity.",
+              "alt": "Painting of a small stream in the middle of the woods. In the center of the painting, there is a small waterfall over a large boulder. Radiant beams of sunlight penetrate the thick forest of birch and other trees, and a small bird sings from a broken branch over the waterfall."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-68792-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-68792-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-68792-low.webp"
+              },
+              "title": "Built for Reuse",
+              "description": "Templates turn one engine into many distinct museums.",
+              "alt": "A work made of oil on canvas."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "xr-experience",
+      "template": "gallery-small",
+      "theme": "terrazzo",
+      "doorStyle": "modern-ash",
+      "title": "Immersive Runtime",
+      "intro": "A single exhibition supports desktop navigation and immersive WebXR.",
+      "blocks": [
+        {
+          "title": "Interaction Paths",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-13617-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-13617-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-13617-low.webp"
+              },
+              "title": "Desktop Exploration",
+              "description": "Mouse look, WASD, and click interaction work without a headset.",
+              "alt": "A work made of lithograph in black on white wove paper."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103529-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103529-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103529-low.webp"
+              },
+              "title": "Immersive WebXR",
+              "description": "The same museum can enter a headset session over HTTPS.",
+              "alt": "Photograph of a young girl in a doorwary wearing a black dress and a woman in a long, draping garment with her arm around her."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-18075-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-18075-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-18075-low.webp"
+              },
+              "title": "Controller Rays",
+              "description": "Visitors can point at doors and exhibits in immersive mode.",
+              "alt": "Sepia-colored, blurry photo of a grim-faced man in a flat-topped hat posing next to a cannon. A small, blurred figure sits on top of the cannon while another figure, in uniform with a rifle at his side, stands at left."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103512-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103512-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103512-low.webp"
+              },
+              "title": "Hand-Ray Ready",
+              "description": "Hand interaction shares the same target model as controllers.",
+              "alt": "A work made of photogravure."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103511-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103511-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103511-low.webp"
+              },
+              "title": "Left-Hand Teleport",
+              "description": "Teleportation provides a comfortable default locomotion path.",
+              "alt": "A work made of photogravure."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66489-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66489-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66489-low.webp"
+              },
+              "title": "Movement Options",
+              "description": "Visitors can choose the locomotion style that fits them.",
+              "alt": "A work made of gelatin silver print."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103519-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103519-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103519-low.webp"
+              },
+              "title": "XR-Aware Interface",
+              "description": "Desktop-only controls hide during immersion and return on exit.",
+              "alt": "A work made of photogravure."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103518-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103518-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-103518-low.webp"
+              },
+              "title": "Progressive Textures",
+              "description": "Low-resolution images appear before higher-detail versions.",
+              "alt": "A work made of photogravure."
+            }
+          ]
+        },
+        {
+          "title": "Performance and Lifecycle",
+          "description": "Project capabilities presented through open-access art.",
+          "photos": [
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-11344-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-11344-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-11344-low.webp"
+              },
+              "title": "Original Eviction",
+              "description": "Full-resolution textures can leave memory when no longer needed.",
+              "alt": "A work made of gelatin silver print."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66284-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66284-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66284-low.webp"
+              },
+              "title": "Adjacent Preloading",
+              "description": "Nearby rooms prepare before the visitor opens their doors.",
+              "alt": "A work made of gelatin silver print."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66434-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66434-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66434-low.webp"
+              },
+              "title": "Frame-Budget Scheduling",
+              "description": "Background work adapts to measured frame timing.",
+              "alt": "A work made of palladium print."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-29230-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-29230-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-29230-low.webp"
+              },
+              "title": "Worker Signage",
+              "description": "Text rendering can move away from the main rendering path.",
+              "alt": "A work made of albumen print."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-11343-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-11343-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-11343-low.webp"
+              },
+              "title": "Room Lifecycle",
+              "description": "Rooms load, open, close, and unload as coherent units.",
+              "alt": "A work made of gelatin silver print."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66424-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66424-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66424-low.webp"
+              },
+              "title": "Background Music",
+              "description": "Global ambience can be overridden by an individual room.",
+              "alt": "A work made of gelatin silver print."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66303-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66303-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/xr-experience-66303-low.webp"
+              },
+              "title": "Performance Visibility",
+              "description": "Runtime snapshots expose loading and scheduling behavior.",
+              "alt": "A work made of gelatin silver print."
+            },
+            {
+              "sources": {
+                "original": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-874-original.webp",
+                "medium": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-874-medium.webp",
+                "low": "https://album-museum-xr-img.hitorisama.org/demo-v2/open-museum/skill-studio-874-low.webp"
+              },
+              "title": "Quest-Conscious Design",
+              "description": "Geometry and textures are planned for standalone headsets.",
+              "alt": "Painting of linens drying on a fence in a field under a dark, overcast sky, a dirt road at left leading to a small village."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "lobby.door-1",
+      "to": "json-foundation.door-1"
+    },
+    {
+      "from": "lobby.door-2",
+      "to": "skill-studio.door-2",
+      "elevatorDoorStyle": "elevator-brushed"
+    },
+    {
+      "from": "lobby.door-3",
+      "to": "template-gallery.door-1",
+      "elevatorDoorStyle": "elevator-bronze"
+    },
+    {
+      "from": "lobby.door-4",
+      "to": "xr-experience.door-2",
+      "elevatorDoorStyle": "elevator-dark"
+    }
+  ]
+}
