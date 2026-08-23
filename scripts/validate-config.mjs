@@ -6,9 +6,9 @@ const configPath = resolve(process.argv[2] || 'public/museums/project-showcase.j
 const config = JSON.parse(await readFile(configPath, 'utf8'));
 const result = validateMuseumConfig(config);
 if (!result.valid) {
-  console.error(`配置校验失败：${configPath}`);
+  console.error(`Configuration validation failed: ${configPath}`);
   result.errors.forEach((error) => console.error(`- ${error}`));
   process.exitCode = 1;
 } else {
-  console.log(`配置有效：${configPath}`);
+  console.log(`Configuration is valid: ${configPath}`);
 }

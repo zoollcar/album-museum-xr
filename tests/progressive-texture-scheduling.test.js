@@ -16,20 +16,20 @@ describe('progressive texture scheduling', () => {
     const second = new Promise((resolve) => { finishSecond = resolve; });
     const manager = new ProgressiveTextureManager({ camera: null });
     manager.items.set('first', {
-      id: 'first', roomId: 'gallery', label: '海边日落', tier: null, lowReady: first
+      id: 'first', roomId: 'gallery', label: 'Sunset by the Sea', tier: null, lowReady: first
     });
     manager.items.set('second', {
-      id: 'second', roomId: 'gallery', label: '山间小路', tier: null, lowReady: second
+      id: 'second', roomId: 'gallery', label: 'Mountain Path', tier: null, lowReady: second
     });
     const updates = [];
 
     const waiting = manager.waitForRoomLow('gallery', (status) => updates.push(status));
     await Promise.resolve();
-    expect(updates[0]).toMatchObject({ label: '海边日落', completed: 0, total: 2, progress: 0 });
-    expect(updates).toContainEqual(expect.objectContaining({ label: '山间小路', completed: 1, total: 2, progress: .5 }));
+    expect(updates[0]).toMatchObject({ label: 'Sunset by the Sea', completed: 0, total: 2, progress: 0 });
+    expect(updates).toContainEqual(expect.objectContaining({ label: 'Mountain Path', completed: 1, total: 2, progress: .5 }));
     finishSecond();
     await waiting;
-    expect(updates.at(-1)).toMatchObject({ label: '山间小路', completed: 2, total: 2, progress: 1 });
+    expect(updates.at(-1)).toMatchObject({ label: 'Mountain Path', completed: 2, total: 2, progress: 1 });
   });
 
   it('does not mutate the scene before the scheduled commit runs', async () => {
@@ -93,7 +93,7 @@ describe('progressive texture scheduling', () => {
 
     expect(manager.createTexture).toHaveBeenCalledTimes(3);
     expect(onError).toHaveBeenCalledTimes(3);
-    expect(onError.mock.calls[2][0]).toContain('已停止自动重试');
+    expect(onError.mock.calls[2][0]).toContain('automatic retries have stopped');
   });
 
   it('does not retry permanent HTTP or decode failures', async () => {

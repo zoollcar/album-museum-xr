@@ -25,7 +25,7 @@ function add(errors, path, message) {
 
 function objectAt(value, path, errors) {
   if (!isObject(value)) {
-    add(errors, path, '必须是对象');
+    add(errors, path, 'must be an object');
     return false;
   }
   return true;
@@ -33,7 +33,7 @@ function objectAt(value, path, errors) {
 
 function arrayAt(value, path, errors) {
   if (!Array.isArray(value)) {
-    add(errors, path, '必须是数组');
+    add(errors, path, 'must be an array');
     return false;
   }
   return true;
@@ -42,19 +42,19 @@ function arrayAt(value, path, errors) {
 function exactKeys(value, allowed, required, path, errors) {
   if (!objectAt(value, path, errors)) return false;
   for (const key of required) {
-    if (!Object.hasOwn(value, key)) add(errors, `${path}.${key}`, '缺少必填字段');
+    if (!Object.hasOwn(value, key)) add(errors, `${path}.${key}`, 'is required');
   }
   for (const key of Object.keys(value)) {
-    if (!allowed.includes(key)) add(errors, `${path}.${key}`, '不允许出现此字段');
+    if (!allowed.includes(key)) add(errors, `${path}.${key}`, 'is not allowed');
   }
   return true;
 }
 
 function stringAt(value, path, errors, { nonEmpty = false } = {}) {
   if (typeof value !== 'string') {
-    add(errors, path, '必须是字符串');
+    add(errors, path, 'must be a string');
   } else if (nonEmpty && value.length === 0) {
-    add(errors, path, '不能为空字符串');
+    add(errors, path, 'must not be empty');
   }
 }
 
@@ -64,7 +64,7 @@ function optionalString(object, key, path, errors, options) {
 
 function optionalEnum(object, key, values, path, errors) {
   if (Object.hasOwn(object, key) && !values.has(object[key])) {
-    add(errors, `${path}.${key}`, `值无效：${JSON.stringify(object[key])}`);
+    add(errors, `${path}.${key}`, `has an invalid value: ${JSON.stringify(object[key])}`);
   }
 }
 
@@ -73,9 +73,9 @@ function validateBackgroundMusic(value, path, errors) {
   if (Object.hasOwn(value, 'url')) stringAt(value.url, `${path}.url`, errors, { nonEmpty: true });
   if (Object.hasOwn(value, 'volume')) {
     if (typeof value.volume !== 'number' || !Number.isFinite(value.volume)) {
-      add(errors, `${path}.volume`, '必须是数字');
+      add(errors, `${path}.volume`, 'must be a number');
     } else if (value.volume < 0 || value.volume > 1) {
-      add(errors, `${path}.volume`, '必须在 0 到 1 之间');
+      add(errors, `${path}.volume`, 'must be between 0 and 1');
     }
   }
 }
@@ -83,7 +83,7 @@ function validateBackgroundMusic(value, path, errors) {
 function validateId(value, path, errors) {
   stringAt(value, path, errors);
   if (typeof value === 'string' && !ID.test(value)) {
-    add(errors, path, '必须以英文字母开头，且只能包含字母、数字、下划线和连字符');
+    add(errors, path, 'must start with a letter and contain only letters, numbers, underscores, and hyphens');
   }
 }
 
@@ -116,7 +116,7 @@ function validateLobby(value, path, errors) {
   const keys = ['id', 'template', 'theme', 'doorStyle', 'elevatorDoorStyle', 'backgroundMusic'];
   if (!exactKeys(value, keys, ['id', 'template'], path, errors)) return;
   if (Object.hasOwn(value, 'id')) validateId(value.id, `${path}.id`, errors);
-  if (value.template !== 'lobby-atrium') add(errors, `${path}.template`, '必须是 "lobby-atrium"');
+  if (value.template !== 'lobby-atrium') add(errors, `${path}.template`, 'must be "lobby-atrium"');
   optionalEnum(value, 'theme', THEMES, path, errors);
   optionalEnum(value, 'doorStyle', DOOR_STYLES, path, errors);
   optionalEnum(value, 'elevatorDoorStyle', ELEVATOR_STYLES, path, errors);
@@ -139,7 +139,7 @@ function validateRoom(value, path, errors) {
   if (!exactKeys(value, keys, ['id', 'template', 'title', 'blocks'], path, errors)) return;
   if (Object.hasOwn(value, 'id')) validateId(value.id, `${path}.id`, errors);
   if (!['gallery-small', 'gallery-medium', 'gallery-large'].includes(value.template)) {
-    add(errors, `${path}.template`, `未知展厅模板：${JSON.stringify(value.template)}`);
+    add(errors, `${path}.template`, `unknown gallery template: ${JSON.stringify(value.template)}`);
   }
   optionalEnum(value, 'theme', THEMES, path, errors);
   optionalEnum(value, 'doorStyle', DOOR_STYLES, path, errors);
@@ -158,7 +158,7 @@ function validateConnection(value, path, errors) {
     if (!Object.hasOwn(value, key)) continue;
     stringAt(value[key], `${path}.${key}`, errors);
     if (typeof value[key] === 'string' && !ENDPOINT.test(value[key])) {
-      add(errors, `${path}.${key}`, '必须采用 <room-id>.door-<正整数> 格式');
+      add(errors, `${path}.${key}`, 'must use the <room-id>.door-<positive integer> format');
     }
   }
   optionalEnum(value, 'elevatorDoorStyle', ELEVATOR_STYLES, path, errors);
@@ -170,16 +170,16 @@ function validateSemantics(config, errors) {
   const rooms = new Map();
   for (const [index, room] of roomList.entries()) {
     if (!isObject(room) || typeof room.id !== 'string') continue;
-    if (rooms.has(room.id)) add(errors, index === 0 ? '$.museum.lobby.id' : `$.rooms[${index - 1}].id`, `房间 ID “${room.id}” 重复`);
+    if (rooms.has(room.id)) add(errors, index === 0 ? '$.museum.lobby.id' : `$.rooms[${index - 1}].id`, `room ID “${room.id}” is duplicated`);
     rooms.set(room.id, room);
     const template = TEMPLATES.get(room.template);
     if (!template || !Array.isArray(room.blocks)) continue;
     if (room.blocks.length > template.maxBlocks) {
-      add(errors, index === 0 ? '$.museum.lobby' : `$.rooms[${index - 1}]`, `超过 ${room.template} 的 ${template.maxBlocks} 个板块上限`);
+      add(errors, index === 0 ? '$.museum.lobby' : `$.rooms[${index - 1}]`, `exceeds the ${template.maxBlocks}-section limit for ${room.template}`);
     }
     const photoCount = room.blocks.reduce((total, block) => total + (Array.isArray(block?.photos) ? block.photos.length : 0), 0);
     if (photoCount > template.maxPhotos) {
-      add(errors, index === 0 ? '$.museum.lobby' : `$.rooms[${index - 1}]`, `有 ${photoCount} 张照片，超过 ${room.template} 的 ${template.maxPhotos} 张上限`);
+      add(errors, index === 0 ? '$.museum.lobby' : `$.rooms[${index - 1}]`, `has ${photoCount} photos, exceeding the ${template.maxPhotos}-photo limit for ${room.template}`);
     }
   }
 
@@ -191,20 +191,20 @@ function validateSemantics(config, errors) {
     const from = typeof connection.from === 'string' ? connection.from.match(ENDPOINT) : null;
     const to = typeof connection.to === 'string' ? connection.to.match(ENDPOINT) : null;
     if (!from || !to) return;
-    if (connection.from === connection.to) add(errors, `$.connections[${index}]`, '连接两端不能相同');
+    if (connection.from === connection.to) add(errors, `$.connections[${index}]`, 'connection cannot use the same endpoint twice');
     for (const [endpoint, match] of [[connection.from, from], [connection.to, to]]) {
       const [, roomId, doorId] = match;
       const room = rooms.get(roomId);
       if (!room) {
-        add(errors, `$.connections[${index}]`, `引用了不存在的房间 “${roomId}”`);
+        add(errors, `$.connections[${index}]`, `references missing room “${roomId}”`);
       } else {
         const template = TEMPLATES.get(room.template);
         const doorNumber = Number(doorId.slice(5));
         if (template && doorNumber > template.doors) {
-          add(errors, `$.connections[${index}]`, `房间 “${roomId}” 的模板 ${room.template} 没有 ${doorId}`);
+          add(errors, `$.connections[${index}]`, `room “${roomId}” uses ${room.template}, which has no ${doorId}`);
         }
       }
-      if (usedEndpoints.has(endpoint)) add(errors, `$.connections[${index}]`, `门 “${endpoint}” 被重复连接`);
+      if (usedEndpoints.has(endpoint)) add(errors, `$.connections[${index}]`, `door “${endpoint}” is connected more than once`);
       usedEndpoints.add(endpoint);
     }
     if (rooms.has(from[1]) && rooms.has(to[1])) {
@@ -225,7 +225,7 @@ function validateSemantics(config, errors) {
   }
   config.rooms.forEach((room, index) => {
     if (isObject(room) && typeof room.id === 'string' && !visited.has(room.id)) {
-      add(errors, `$.rooms[${index}].id`, `房间 “${room.id}” 无法从大厅到达`);
+      add(errors, `$.rooms[${index}].id`, `room “${room.id}” cannot be reached from the lobby`);
     }
   });
 }
@@ -233,7 +233,7 @@ function validateSemantics(config, errors) {
 function validateConfig(config) {
   const errors = [];
   if (!exactKeys(config, ['version', 'museum', 'rooms', 'connections'], ['version', 'museum', 'rooms', 'connections'], '$', errors)) return errors;
-  if (Object.hasOwn(config, 'version') && config.version !== 1) add(errors, '$.version', '必须是数字 1');
+  if (Object.hasOwn(config, 'version') && config.version !== 1) add(errors, '$.version', 'must be the number 1');
   if (Object.hasOwn(config, 'museum')) validateMuseum(config.museum, '$.museum', errors);
   if (Object.hasOwn(config, 'rooms') && arrayAt(config.rooms, '$.rooms', errors)) {
     config.rooms.forEach((room, index) => validateRoom(room, `$.rooms[${index}]`, errors));
@@ -261,29 +261,29 @@ async function check(input) {
   try {
     source = await readInput(input);
   } catch (error) {
-    console.error(`无法读取：${input}\n- ${error.message}`);
+    console.error(`Could not read: ${input}\n- ${error.message}`);
     return false;
   }
   let config;
   try {
     config = JSON.parse(source.text.replace(/^\uFEFF/, ''));
   } catch (error) {
-    console.error(`JSON 解析失败：${source.label}\n- ${error.message}`);
+    console.error(`Could not parse JSON: ${source.label}\n- ${error.message}`);
     return false;
   }
   const errors = validateConfig(config);
   if (errors.length) {
-    console.error(`博物馆 JSON 校验失败：${source.label}`);
+    console.error(`Museum JSON validation failed: ${source.label}`);
     errors.forEach((error) => console.error(`- ${error}`));
     return false;
   }
-  console.log(`博物馆 JSON 有效：${source.label}`);
+  console.log(`Museum JSON is valid: ${source.label}`);
   return true;
 }
 
 const inputs = process.argv.slice(2);
 if (inputs.includes('--help') || inputs.includes('-h')) {
-  console.log('用法：node check-museum-json.mjs [museum.json ...]\n省略路径时检查 public/museums/project-showcase.json；使用 - 从 stdin 读取。');
+  console.log('Usage: node check-museum-json.mjs [museum.json ...]\nWithout paths, checks public/museums/project-showcase.json; use - to read from stdin.');
   process.exit(0);
 }
 const targets = inputs.length ? inputs : ['public/museums/project-showcase.json'];

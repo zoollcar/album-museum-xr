@@ -30,12 +30,12 @@ function buildDoorLoadIndicator(parent) {
     context.fillStyle = 'rgba(32, 28, 24, .9)';
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = '#f4eadc';
-    context.font = '600 36px "Segoe UI", "Microsoft YaHei", sans-serif';
+    context.font = '600 36px "Segoe UI", sans-serif';
     context.textBaseline = 'middle';
-    context.fillText((stage || '正在准备').slice(0, 14), 24, 42);
+    context.fillText((stage || 'Preparing').slice(0, 14), 24, 42);
     context.fillStyle = '#cfc3b3';
-    context.font = '500 27px "Segoe UI", "Microsoft YaHei", sans-serif';
-    context.fillText((detail || '请稍候…').slice(0, 22), 24, 101);
+    context.font = '500 27px "Segoe UI", sans-serif';
+    context.fillText((detail || 'Please wait…').slice(0, 22), 24, 101);
     context.fillStyle = '#d2ad69';
     context.font = '500 30px "Segoe UI", sans-serif';
     context.textAlign = 'right';
@@ -48,11 +48,11 @@ function buildDoorLoadIndicator(parent) {
   };
   return {
     root,
-    set({ state = 'preparing', stage = '正在准备', detail = '', progress = 0 } = {}) {
+    set({ state = 'preparing', stage = 'Preparing', detail = '', progress = 0 } = {}) {
       root.setAttribute('visible', state !== 'idle' && state !== 'ready');
       draw(
-        state === 'error' ? '加载失败' : stage,
-        state === 'error' ? '请点击门重试' : detail,
+        state === 'error' ? 'Loading failed' : stage,
+        state === 'error' ? 'Click the door to retry' : detail,
         state === 'error' ? 0 : progress
       );
     },
@@ -65,7 +65,7 @@ function buildDoorLoadIndicator(parent) {
 
 function makeInteractive(panel, destination, onClick) {
   panel.setAttribute('tabindex', '0');
-  panel.setAttribute('aria-label', `通往${destination.title}`);
+  panel.setAttribute('aria-label', `To ${destination.title}`);
   panel.addEventListener('click', onClick);
 }
 

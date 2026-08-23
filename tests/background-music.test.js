@@ -17,7 +17,7 @@ describe('background music', () => {
     const global = { url: 'https://media.example.com/global.mp3' };
     const unique = { url: 'https://media.example.com/unique.mp3', volume: 0.2 };
     const config = museumConfig({
-      museum: { title: '测试博物馆', backgroundMusic: global, lobby: { id: 'lobby', template: 'lobby-atrium' } },
+      museum: { title: 'Test Museum', backgroundMusic: global, lobby: { id: 'lobby', template: 'lobby-atrium' } },
       rooms: [{ ...room('room-a'), backgroundMusic: unique }]
     });
 

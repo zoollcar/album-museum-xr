@@ -1,28 +1,28 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#e9dfd1" />
-    <meta name="description" content="由 JSON 驱动的个人 WebXR 照片博物馆" />
-    <title>个人旅行博物馆</title>
+    <meta name="description" content="A personal WebXR photo museum powered by JSON" />
+    <title>Personal Travel Museum</title>
   </head>
   <body>
     <div id="app-shell">
       <main id="welcome-screen" class="welcome-screen" aria-labelledby="welcome-title">
         <div class="welcome-content">
           <p class="eyebrow">PERSONAL ARCHIVE</p>
-          <h1 id="welcome-title">欢迎来到照片博物馆</h1>
-          <p class="welcome-intro">选择一个馆藏开始参观，或导入一份 JSON 游览配置。</p>
+          <h1 id="welcome-title">Welcome to the Photo Museum</h1>
+          <p class="welcome-intro">Choose a museum to begin, or import a JSON tour configuration.</p>
           <section class="museum-picker" aria-labelledby="museum-picker-title">
             <div class="picker-heading">
-              <h2 id="museum-picker-title">本地博物馆</h2>
-              <span id="museum-count" class="museum-count">正在查找…</span>
+              <h2 id="museum-picker-title">Local Museums</h2>
+              <span id="museum-count" class="museum-count">Looking for museums…</span>
             </div>
             <div id="museum-list" class="museum-list" aria-live="polite"></div>
           </section>
-          <div class="welcome-divider"><span>或</span></div>
-          <label class="import-button" for="tour-import">导入 JSON 游览</label>
+          <div class="welcome-divider"><span>or</span></div>
+          <label class="import-button" for="tour-import">Import a JSON Tour</label>
           <input id="tour-import" type="file" accept="application/json,.json" hidden />
           <p id="welcome-status" class="welcome-status" role="status" aria-live="polite"></p>
         </div>
@@ -30,8 +30,8 @@
       <div id="loading-screen" class="loading-screen" role="status" aria-live="polite">
         <div class="loading-mark" aria-hidden="true"></div>
         <p class="eyebrow">PERSONAL ARCHIVE</p>
-        <h1 id="loading-title">正在准备博物馆</h1>
-        <p id="loading-detail">读取展馆配置与大厅资源…</p>
+        <h1 id="loading-title">Preparing the Museum</h1>
+        <p id="loading-detail">Reading the museum configuration and lobby assets…</p>
         <div class="loading-track"><span id="loading-progress"></span></div>
       </div>
 
@@ -39,49 +39,49 @@
       <header id="museum-header" class="museum-header is-hidden">
         <div>
           <p class="eyebrow">PERSONAL MUSEUM</p>
-          <h1 id="museum-title">个人旅行博物馆</h1>
-          <p id="room-title">大厅</p>
+          <h1 id="museum-title">Personal Travel Museum</h1>
+          <p id="room-title">Lobby</p>
         </div>
         <div class="header-actions">
-          <button id="settings-toggle" class="quiet-button" type="button" aria-expanded="false">设置</button>
-          <button id="help-toggle" class="quiet-button" type="button" aria-expanded="false">参观提示</button>
+          <button id="settings-toggle" class="quiet-button" type="button" aria-expanded="false">Settings</button>
+          <button id="help-toggle" class="quiet-button" type="button" aria-expanded="false">Visit Guide</button>
         </div>
       </header>
 
-      <aside id="settings-panel" class="settings-panel is-hidden" aria-label="设置">
-        <button id="settings-close" class="close-button" type="button" aria-label="关闭">×</button>
+      <aside id="settings-panel" class="settings-panel is-hidden" aria-label="Settings">
+        <button id="settings-close" class="close-button" type="button" aria-label="Close">×</button>
         <p class="eyebrow">SETTINGS</p>
-        <h2>移动方式</h2>
+        <h2>Movement</h2>
         <fieldset class="movement-options">
-          <legend>VR 摇杆行为</legend>
-          <label><input type="radio" name="page-vr-movement" value="teleport" data-vr-movement checked /> Teleport 瞬移</label>
-          <label><input type="radio" name="page-vr-movement" value="move" data-vr-movement /> Move 连续移动</label>
+          <legend>VR thumbstick behavior</legend>
+          <label><input type="radio" name="page-vr-movement" value="teleport" data-vr-movement checked /> Teleport</label>
+          <label><input type="radio" name="page-vr-movement" value="move" data-vr-movement /> Continuous movement</label>
         </fieldset>
       </aside>
 
-      <aside id="help-panel" class="help-panel is-hidden" aria-label="参观提示">
-        <button id="help-close" class="close-button" type="button" aria-label="关闭">×</button>
+      <aside id="help-panel" class="help-panel is-hidden" aria-label="Visit guide">
+        <button id="help-close" class="close-button" type="button" aria-label="Close">×</button>
         <p class="eyebrow">HOW TO VISIT</p>
-        <h2>自由参观</h2>
+        <h2>Explore Freely</h2>
         <dl>
-          <div><dt>桌面</dt><dd>鼠标观察，WASD 行走，点击门加载下一个房间。</dd></div>
-          <div><dt>移动端</dt><dd>按住左下方向键移动，在屏幕其余区域拖动视角；陀螺仪转动仍然有效。</dd></div>
-          <div><dt>VR</dt><dd>在腕部设置中切换瞬移或连续移动；握住手柄或捏合手指可拿起小画框。</dd></div>
-          <div><dt>照片</dt><dd>靠近并注视照片时自动切换到原始画质。</dd></div>
+          <div><dt>Desktop</dt><dd>Use the mouse to look, WASD to walk, and click a door to load the next room.</dd></div>
+          <div><dt>Mobile</dt><dd>Hold the direction pad at lower left to move and drag elsewhere to look; gyroscope controls remain available.</dd></div>
+          <div><dt>VR</dt><dd>Switch between teleportation and continuous movement in the wrist settings; grip a controller or pinch to pick up small frames.</dd></div>
+          <div><dt>Photos</dt><dd>Move close and keep looking at a photo to load the original quality.</dd></div>
         </dl>
       </aside>
 
       <div id="toast" class="toast is-hidden" role="status" aria-live="polite"></div>
       <div id="crosshair" aria-hidden="true"></div>
-      <nav id="mobile-dpad" class="mobile-dpad" aria-label="移动方向">
-        <button class="dpad-button dpad-up" type="button" data-move-direction="forward" aria-label="向前">▲</button>
-        <button class="dpad-button dpad-left" type="button" data-move-direction="left" aria-label="向左">◀</button>
-        <button class="dpad-button dpad-down" type="button" data-move-direction="backward" aria-label="向后">▼</button>
-        <button class="dpad-button dpad-right" type="button" data-move-direction="right" aria-label="向右">▶</button>
+      <nav id="mobile-dpad" class="mobile-dpad" aria-label="Movement controls">
+        <button class="dpad-button dpad-up" type="button" data-move-direction="forward" aria-label="Forward">▲</button>
+        <button class="dpad-button dpad-left" type="button" data-move-direction="left" aria-label="Left">◀</button>
+        <button class="dpad-button dpad-down" type="button" data-move-direction="backward" aria-label="Backward">▼</button>
+        <button class="dpad-button dpad-right" type="button" data-move-direction="right" aria-label="Right">▶</button>
       </nav>
-      <section id="vr-settings" class="vr-settings-source" aria-label="VR 设置">
+      <section id="vr-settings" class="vr-settings-source" aria-label="VR settings">
         <p>SETTINGS</p>
-        <h2>移动方式</h2>
+        <h2>Movement</h2>
         <label><input type="radio" name="wrist-vr-movement" value="teleport" data-vr-movement checked /> Teleport</label>
         <label><input type="radio" name="wrist-vr-movement" value="move" data-vr-movement /> Move</label>
       </section>

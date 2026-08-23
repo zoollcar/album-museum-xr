@@ -64,7 +64,7 @@ export class BackgroundMusicManager {
         this.blocked = true;
         return;
       }
-      this.onError(`背景音乐无法播放：${error?.message || this.currentUrl}`);
+      this.onError(`Could not play background music: ${error?.message || this.currentUrl}`);
     }
   }
 

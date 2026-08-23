@@ -159,7 +159,7 @@ export class MuseumScene {
       const spawn = this.localToWorld(loaded.placement, 0, loaded.template.depth / 2 - 1.75);
       this.rig.object3D.position.set(spawn.x, 0, spawn.z);
     }
-    this.ui.setRoom(this.config.museum.title, this.currentRoomId === this.config.museum.lobby.id ? '大厅' : loaded.room.title);
+    this.ui.setRoom(this.config.museum.title, this.currentRoomId === this.config.museum.lobby.id ? 'Lobby' : loaded.room.title);
     this.musicManager.setTrack(backgroundMusicForRoom(this.config, this.currentRoomId));
     this.ready = true;
     this.clock = window.setInterval(() => this.tick(), 180);
@@ -205,22 +205,22 @@ export class MuseumScene {
     const roomPlan = planRoomLayout(room, template, connectedDoorIds, theme.decor);
     const defaultSpawn = this.localToWorld(placement, 0, template.depth / 2 - 1.75);
     const steps = [
-      { label: '准备房间结构', weight: 2, run: () => {
+      { label: 'Building room structure', weight: 2, run: () => {
         this.registerSpawnAnchor(roomId, null, { x: defaultSpawn.x, z: defaultSpawn.z, targetX: placement.x, targetZ: placement.z });
         box(group, {
           position: '0 -0.08 0', width: template.width, height: .16, depth: template.depth, color: theme.floor.tint,
           material: surfaceMaterial(theme.floor, Math.max(2, template.width / theme.floor.repeatMeters), Math.max(2, template.depth / theme.floor.repeatMeters))
         });
       } },
-      { label: '准备房间结构', run: () => entity('a-plane', {
+      { label: 'Building room structure', run: () => entity('a-plane', {
         class: 'navmesh', position: '0 .012 0', rotation: '-90 0 0', width: template.width - .3, height: template.depth - .3,
         material: 'transparent: true; opacity: 0.001; side: double; depthWrite: false'
       }, group) },
-      ...['north', 'east', 'south', 'west'].flatMap((wall) => wallBuildSteps(group, room, wall, connectedDoorIds).map((run) => ({ label: '准备房间结构', run }))),
-      ...skylightBuildSteps(group, template).map((run) => ({ label: '准备房间结构', run })),
-      ...trackLightBuildSteps(group, template).map((run) => ({ label: '准备房间结构', run })),
-      { label: '布置展品', weight: 2, run: () => buildTemplateDecor(group, template, roomPlan.items) },
-      { label: '布置展品', run: () => {
+      ...['north', 'east', 'south', 'west'].flatMap((wall) => wallBuildSteps(group, room, wall, connectedDoorIds).map((run) => ({ label: 'Building room structure', run }))),
+      ...skylightBuildSteps(group, template).map((run) => ({ label: 'Building room structure', run })),
+      ...trackLightBuildSteps(group, template).map((run) => ({ label: 'Building room structure', run })),
+      { label: 'Placing exhibits', weight: 2, run: () => buildTemplateDecor(group, template, roomPlan.items) },
+      { label: 'Placing exhibits', run: () => {
         const bench = roomPlan.items.find((item) => item.type === 'bench');
         if (!bench) return;
         const world = this.localToWorld(placement, bench.x, bench.z);
@@ -231,7 +231,7 @@ export class MuseumScene {
         : this.galleryContentSteps(group, room, template, connectedDoorIds, roomPlan)),
       ...(this.layout.adjacency.get(room.id) || []).flatMap((edge) => this.roomDoorBuildSteps(group, room, edge))
     ];
-    const job = { roomId, state: 'preparing', stage: '正在搭建房间', detail: '', progress: 0, priority, group, handle: null, promise: null };
+    const job = { roomId, state: 'preparing', stage: 'Building room', detail: '', progress: 0, priority, group, handle: null, promise: null };
     const updateProgress = ({ label, progress }) => {
       job.stage = this.friendlyLoadingStage(label || job.stage);
       job.detail = room.title;
@@ -248,7 +248,7 @@ export class MuseumScene {
     job.promise = (async () => {
       try {
         await job.handle.promise;
-        job.stage = '正在准备行走区域';
+        job.stage = 'Preparing walkable area';
         job.detail = room.title;
         job.progress = .8;
         this.updateRoomDoorProgress(roomId, {
@@ -257,21 +257,21 @@ export class MuseumScene {
         const colliderTask = this.scheduleColliderBuild(`room:${roomId}`, group, job.priority);
         job.handle = colliderTask;
         await colliderTask.promise;
-        job.stage = '正在制作文字';
+        job.stage = 'Creating signage';
         job.detail = room.title;
         job.progress = .82;
         this.updateRoomDoorProgress(roomId, {
           state: 'preparing', stage: job.stage, detail: job.detail, progress: job.progress
         });
         await waitForRoomSignage(roomId);
-        job.stage = '正在加载照片';
+        job.stage = 'Loading photos';
         job.progress = .84;
         this.updateRoomDoorProgress(roomId, {
           state: 'preparing', stage: job.stage, detail: room.title, progress: job.progress
         });
         await this.textureManager.waitForRoomLow?.(roomId, ({ label, completed, total, progress }) => {
-          job.stage = '正在加载照片';
-          job.detail = total ? `${label || room.title} · ${completed}/${total}` : '这个房间没有照片';
+          job.stage = 'Loading photos';
+          job.detail = total ? `${label || room.title} · ${completed}/${total}` : 'This room has no photos';
           job.progress = .84 + progress * .12;
           this.updateRoomDoorProgress(roomId, {
             state: 'preparing', stage: job.stage, detail: job.detail, progress: job.progress
@@ -284,7 +284,7 @@ export class MuseumScene {
         job.state = 'ready';
         job.progress = 1;
         this.updateRoomDoorProgress(roomId, {
-          state: 'preparing', stage: '正在准备通道', detail: '马上就好', progress: .97
+          state: 'preparing', stage: 'Preparing passage', detail: 'Almost ready', progress: .97
         });
         this.roomJobs.delete(roomId);
         this.recordPerformanceEvent?.('room:load-ready', { roomId, priority });
@@ -296,7 +296,7 @@ export class MuseumScene {
         this.textureManager.disposeRoom(roomId);
         group.setAttribute('visible', false);
         this.trackRoomDisposal(roomId, [this.scheduleTreeDisposal(`room:${roomId}`, group)]);
-        this.updateRoomDoorProgress(roomId, { state: 'error', stage: '加载失败，点击重试', progress: 0 });
+        this.updateRoomDoorProgress(roomId, { state: 'error', stage: 'Loading failed. Click to retry.', progress: 0 });
         this.recordPerformanceEvent?.('room:load-error', { roomId, priority, error: error.message }, { level: 'warn' });
         throw error;
       }
@@ -307,15 +307,15 @@ export class MuseumScene {
 
   lobbyContentSteps(group, room, template, roomPlan) {
     return [
-      { label: '生成说明', weight: 2, run: () => textPlane(group, {
+      { label: 'Creating signage', weight: 2, run: () => textPlane(group, {
         ...roomPlan.signage.headline,
         title: this.config.museum.subtitle || 'PERSONAL MUSEUM', lines: [this.config.museum.title], align: 'center'
       }) },
-      { label: '生成说明', weight: 2, run: () => textPlane(group, {
+      { label: 'Creating signage', weight: 2, run: () => textPlane(group, {
         ...roomPlan.signage.welcome,
-        title: 'WELCOME', lines: [this.config.museum.intro || '欢迎参观。'], signStyle: 'wall-label'
+        title: 'WELCOME', lines: [this.config.museum.intro || 'Welcome to the museum.'], signStyle: 'wall-label'
       }) },
-      { label: '布置展品', run: () => {
+      { label: 'Placing exhibits', run: () => {
         if (!this.config.museum.heroImage) return;
         const hero = roomPlan.hero;
         const frame = box(group, { position: `${hero.x} ${hero.y} ${hero.z}`, rotation: hero.rotation, width: hero.maxWidth + .2, height: hero.maxHeight + .2, depth: .08, color: COLORS.frame });
@@ -324,7 +324,7 @@ export class MuseumScene {
         plane.dataset.maxWidth = String(hero.maxWidth); plane.dataset.maxHeight = String(hero.maxHeight);
         this.textureManager.register({
           id: `${room.id}-hero`, roomId: room.id, plane, frame,
-          sources: this.config.museum.heroImage, label: '大厅主照片'
+          sources: this.config.museum.heroImage, label: 'Lobby hero image'
         });
       } }
     ];
@@ -345,12 +345,12 @@ export class MuseumScene {
       return { photo, slot };
     }).filter(({ slot }) => slot);
     const mounts = new Map();
-    const steps = [{ label: '生成说明', weight: 2, run: () => textPlane(group, {
+    const steps = [{ label: 'Creating signage', weight: 2, run: () => textPlane(group, {
       ...roomPlan.signage.headline,
       title: room.title, lines: room.intro ? [room.intro] : [], align: 'left'
     }) }];
     assigned.forEach(({ photo, slot }, index) => {
-      steps.push({ label: '布置展品', weight: 2, run: () => {
+      steps.push({ label: 'Placing exhibits', weight: 2, run: () => {
         const mount = buildPhotoMount(group, slot, `portable-frame-${room.id}-${index + 1}`);
         mounts.set(index, mount);
         const photoPosition = this.localToWorld(this.layout.placements.get(room.id), slot.x, slot.z);
@@ -361,14 +361,14 @@ export class MuseumScene {
         this.textureManager.register({
           id: `${room.id}-photo-${index}`, roomId: room.id, plane: mount.plane, frame: mount.frame,
           sources: photo.sources,
-          label: photo.title || `${photo.blockTitle || room.title} 第 ${index + 1} 张照片`
+          label: photo.title || `${photo.blockTitle || room.title}, photo ${index + 1}`
         });
       } });
-      if (hasCaption(photo)) steps.push({ label: '生成说明', run: () => {
+      if (hasCaption(photo)) steps.push({ label: 'Creating signage', run: () => {
         const lines = [photo.location, photo.date, photo.description].filter(Boolean);
         textPlane(mounts.get(index).holder, { position: `0 ${-slot.maxHeight / 2 - .25} .052`, width: Math.min(slot.maxWidth, 1.5), height: .32, title: photo.title || '', lines, signStyle: 'wall-label' });
       } });
-      if (index === 0 || assigned[index - 1]?.photo.blockTitle !== photo.blockTitle) steps.push({ label: '生成说明', run: () => textPlane(mounts.get(index).holder, {
+      if (index === 0 || assigned[index - 1]?.photo.blockTitle !== photo.blockTitle) steps.push({ label: 'Creating signage', run: () => textPlane(mounts.get(index).holder, {
         position: `${-slot.maxWidth / 2} ${slot.maxHeight / 2 + .36} .052`, width: 1.4, height: .34, title: photo.blockTitle || room.title, lines: [], signStyle: 'section'
       }) });
     });
@@ -382,8 +382,8 @@ export class MuseumScene {
     const port = getDoorPort(room, endpoint.doorId);
     const styleId = connection.kind === 'elevator' ? this.elevatorStyleId(connection) : null;
     const plan = doorModelBuildSteps({ parent: group, port, endpoint, destination, connection, room, styleId, onClick: () => this.toggleDoor(connection.id, room.id) });
-    const steps = plan.steps.map((run) => ({ label: '连接通道', run }));
-    steps.push({ label: '连接通道', run: () => {
+    const steps = plan.steps.map((run) => ({ label: 'Connecting passage', run }));
+    steps.push({ label: 'Connecting passage', run: () => {
       const doorModel = plan.result();
       if (!this.connectionViews.has(connection.id)) {
         this.connectionViews.set(connection.id, {
@@ -410,12 +410,12 @@ export class MuseumScene {
 
   friendlyLoadingStage(stage) {
     return ({
-      '准备房间结构': '正在搭建房间',
-      '布置展品': '正在摆放展品',
-      '生成说明': '正在制作说明牌',
-      '连接通道': '正在安装房门',
-      '建立碰撞': '正在准备行走区域',
-      '加载预览图': '正在加载照片'
+      'Building room structure': 'Building room',
+      'Placing exhibits': 'Placing exhibits',
+      'Creating signage': 'Creating signage',
+      'Connecting passage': 'Installing doors',
+      'Building collisions': 'Preparing walkable area',
+      'Loading previews': 'Loading photos'
     })[stage] || stage;
   }
 
@@ -512,7 +512,7 @@ export class MuseumScene {
     const doorOpen = this.isDoorOpen(view, fromRoomId);
     if (doorOpen) {
       if (this.isNearConnection(view.connection, 1.3)) {
-        this.ui.toast('门口有人，暂时不能关门。');
+        this.ui.toast('Someone is in the doorway, so the door cannot close yet.');
         return;
       }
       if (view.elevator) {
@@ -529,16 +529,16 @@ export class MuseumScene {
     const loadStartedAt = performance.now();
     this.recordPerformanceEvent?.('door:load-start', { connectionId, fromRoomId, destination });
     this.updateRoomDoorProgress(destination, {
-      state: 'preparing', stage: '正在准备房间', detail: this.roomConfig(destination).title, progress: .01
+      state: 'preparing', stage: 'Preparing room', detail: this.roomConfig(destination).title, progress: .01
     });
-    this.ui.toast(`正在准备“${this.roomConfig(destination).title}”…`, 12000);
+    this.ui.toast(`Preparing “${this.roomConfig(destination).title}”…`, 12000);
     try {
       await this.loadRoom(destination, { priority: 'interactive' });
       this.updateRoomDoorProgress(destination, {
-        state: 'preparing', stage: '正在准备通道', detail: '马上就好', progress: .97
+        state: 'preparing', stage: 'Preparing passage', detail: 'Almost ready', progress: .97
       });
       await this.ensureConnector(view.connection, { priority: 'interactive' });
-      this.updateRoomDoorProgress(destination, { state: 'ready', stage: '完成', progress: 1 });
+      this.updateRoomDoorProgress(destination, { state: 'ready', stage: 'Complete', progress: 1 });
       if (view.elevator) {
         // The room-side door is the A door. It is the only one that may open
         // before travel; runElevator later opens only the other endpoint (B).
@@ -547,13 +547,13 @@ export class MuseumScene {
         view.elevator.exitRoomId = null;
       }
       else this.setConnectionOpen(view, true);
-      this.ui.toast(`“${this.roomConfig(destination).title}”已开放。`, 2200);
+      this.ui.toast(`“${this.roomConfig(destination).title}” is now open.`, 2200);
       this.recordPerformanceEvent?.('door:load-ready', {
         connectionId, fromRoomId, destination, durationMs: performance.now() - loadStartedAt
       });
     } catch (error) {
       console.error(error);
-      this.ui.toast('房间加载失败，点击门可重试。', 4200);
+      this.ui.toast('Room loading failed. Click the door to retry.', 4200);
       this.recordPerformanceEvent?.('door:load-error', {
         connectionId, fromRoomId, destination, durationMs: performance.now() - loadStartedAt, error: error.message
       }, { level: 'warn' });
@@ -613,9 +613,9 @@ export class MuseumScene {
     }
     const connector = entity('a-entity', { id: `connector-${connection.id}`, visible: false }, this.root);
     const steps = connection.kind === 'elevator'
-      ? [connection.from, connection.to].map((endpoint) => ({ label: '连接通道', weight: 2, run: () => this.buildElevatorEndpoint(connector, connection, endpoint) }))
+      ? [connection.from, connection.to].map((endpoint) => ({ label: 'Connecting passage', weight: 2, run: () => this.buildElevatorEndpoint(connector, connection, endpoint) }))
       : connection.path.slice(0, -1).map((point, index) => ({
-        label: '连接通道', weight: 2,
+        label: 'Connecting passage', weight: 2,
         run: () => this.buildCorridorSegment(connector, point, connection.path[index + 1], connection.id, index)
       }));
     const job = { connector, handle: null, promise: null, priority };
@@ -699,7 +699,7 @@ export class MuseumScene {
       this.registerColliderElement(owner, element);
     });
     const task = this.scheduler.enqueueIncremental({
-      id: `${owner}:colliders`, owner, priority, label: '建立碰撞', runSlice, yieldAfterStep: true
+      id: `${owner}:colliders`, owner, priority, label: 'Building collisions', runSlice, yieldAfterStep: true
     });
     task.promise.then(() => this.recordPerformanceEvent?.('colliders:build-ready', {
       owner, priority, visitedElements, colliderCount
@@ -823,7 +823,7 @@ export class MuseumScene {
     view.elevator.exitRoomId = null;
     view.loading = true;
     this.setElevatorDoor(view, null);
-    this.ui.toast('电梯门正在关闭…', 1200);
+    this.ui.toast('Elevator doors are closing…', 1200);
     await new Promise((resolve) => window.setTimeout(resolve, 780));
     const targetRoom = this.roomConfig(target.roomId);
     const targetPlacement = this.layout.placements.get(target.roomId);
@@ -844,7 +844,7 @@ export class MuseumScene {
     // an immediate position update prevents a rendered-but-still-blocked frame
     // after the rig is transferred to the destination cabin.
     this.setElevatorDoor(view, target.roomId, { immediate: true });
-    this.ui.toast(`已抵达“${targetRoom.title}”`, 1800);
+    this.ui.toast(`Arrived at “${targetRoom.title}”`, 1800);
     view.elevator.entryRoomId = null;
     view.elevator.exitRoomId = target.roomId;
     view.elevator.phase = 'awaiting-exit';
@@ -986,7 +986,7 @@ export class MuseumScene {
       id: `${queued.owner}:dispose`,
       owner: queued.owner,
       priority: 'cleanup',
-      label: '释放资源',
+      label: 'Releasing resources',
       runSlice: createIncrementalTreeDisposer(queued.root)
     });
     this.activeTreeDisposal = { ...queued, task };
@@ -1036,7 +1036,7 @@ export class MuseumScene {
       this.currentRoomId = roomId;
       this.recordPerformanceEvent?.('room:entered', { previousRoomId, roomId });
       const room = this.roomConfig(roomId);
-      this.ui.setRoom(this.config.museum.title, roomId === this.config.museum.lobby.id ? '大厅' : room.title);
+      this.ui.setRoom(this.config.museum.title, roomId === this.config.museum.lobby.id ? 'Lobby' : room.title);
       this.musicManager.setTrack(backgroundMusicForRoom(this.config, roomId));
       this.unloadDistantRooms();
     }

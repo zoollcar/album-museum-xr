@@ -48,7 +48,7 @@ describe('asynchronous room loading', () => {
     await Promise.resolve();
     expect(view.loading).toBe(true);
     expect(scene.updateRoomDoorProgress).toHaveBeenNthCalledWith(1, 'target', {
-      state: 'preparing', stage: '正在准备房间', detail: 'target', progress: .01
+      state: 'preparing', stage: 'Preparing room', detail: 'target', progress: .01
     });
     expect(scene.setConnectionOpen).not.toHaveBeenCalled();
     room.resolve({});
@@ -81,7 +81,7 @@ describe('asynchronous room loading', () => {
     await MuseumScene.prototype.toggleDoor.call(scene, 'a-b', 'from');
     expect(scene.setConnectionOpen).not.toHaveBeenCalled();
     expect(view.loading).toBe(false);
-    expect(scene.ui.toast).toHaveBeenLastCalledWith('房间加载失败，点击门可重试。', 4200);
+    expect(scene.ui.toast).toHaveBeenLastCalledWith('Room loading failed. Click the door to retry.', 4200);
     consoleError.mockRestore();
   });
 

@@ -47,14 +47,14 @@ function makeTextCanvas({
     context.fillRect(22, 42, 4, Math.max(160, height - 84));
   }
   const textPlan = planSignage({ title, lines, width: displayWidth, height: displayHeight, textureWidth: width, textureHeight, signStyle,
-    measureText: (text, size) => { context.font = `400 ${size}px "Segoe UI", "Microsoft YaHei", sans-serif`; return context.measureText(text).width; } });
+    measureText: (text, size) => { context.font = `400 ${size}px "Segoe UI", sans-serif`; return context.measureText(text).width; } });
   if (textPlan.title) {
     context.fillStyle = style.accent;
-    context.font = `600 ${textPlan.titleSize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
+    context.font = `600 ${textPlan.titleSize}px "Segoe UI", sans-serif`;
     context.fillText(textPlan.title, x, textPlan.titleTop);
   }
   context.fillStyle = style.color;
-  context.font = `400 ${textPlan.bodySize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
+  context.font = `400 ${textPlan.bodySize}px "Segoe UI", sans-serif`;
   textPlan.rows.forEach((row, index) => context.fillText(row, x, textPlan.bodyTop + index * (textPlan.bodySize + textPlan.lineGap)));
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -132,7 +132,7 @@ export async function installWorkerBitmap({ bitmap, plane, material, roomId, sch
       id: taskId,
       owner: `room:${roomId || 'shared'}`,
       priority: 'background',
-      steps: [{ label: '生成说明', run: commit }]
+      steps: [{ label: 'Creating signage', run: commit }]
     }).promise;
     else commit();
   } catch (error) {
@@ -168,7 +168,7 @@ export function textPlane(parent, options) {
         });
       } catch (error) {
         if (error.name === 'AbortError') return;
-        console.warn('文字纹理后台生成失败，使用主线程回退。', error);
+        console.warn('Background text texture generation failed; falling back to the main thread.', error);
         const fallback = () => {
           if (!plane.isConnected) return;
           const fallbackTexture = makeTextCanvas(options);
@@ -182,11 +182,11 @@ export function textPlane(parent, options) {
             id: `signage-fallback:${roomId || 'shared'}:${signageRequestId++}`,
             owner: `room:${roomId || 'shared'}`,
             priority: 'background',
-            steps: [{ label: '生成说明', run: fallback }]
+            steps: [{ label: 'Creating signage', run: fallback }]
           }).promise;
           else fallback();
         } catch (fallbackError) {
-          if (fallbackError.name !== 'AbortError') console.warn('文字纹理主线程回退失败。', fallbackError);
+          if (fallbackError.name !== 'AbortError') console.warn('Main-thread text texture fallback failed.', fallbackError);
         }
       }
     })();

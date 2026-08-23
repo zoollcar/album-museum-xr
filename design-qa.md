@@ -27,7 +27,7 @@
 ## Interaction Evidence
 
 - Entering desktop fullscreen/WebXR added `body.is-vr`; computed `#museum-header` display became `none`. Exiting restored `display: flex`.
-- An actual click opened the city-to-coast elevator. Walking into the cabin closed the door, moved the visitor, reopened the destination, updated the room title to `沿海日记`, and displayed `已抵达“沿海日记”`.
+- An actual click opened the city-to-coast elevator. Walking into the cabin closed the door, moved the visitor, reopened the destination, updated the room title to `Coastal Journal`, and displayed `Arrived at “Coastal Journal”`.
 - Repeated W input stopped at a closed timber door and at a continuous wall rather than passing through.
 - The bench collision stopped the rig at world Z `-14.81`, 0.59 m before the bench center at `-15.40`.
 - Room unload now closes the surviving door leaf immediately before removing its connector and textures, preventing an open doorway into empty space.

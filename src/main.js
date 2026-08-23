@@ -47,7 +47,7 @@ class MuseumUI {
   }
 
   fail(errors) {
-    this.loadingTitle.textContent = '展馆配置需要修改';
+    this.loadingTitle.textContent = 'Museum configuration needs attention';
     this.loadingDetail.innerHTML = errors.map((error) => `<span style="display:block;margin:.45em 0">${escapeHtml(error)}</span>`).join('');
     this.loadingProgress.style.width = '100%';
     this.loadingProgress.style.background = '#9b4f3f';
@@ -94,14 +94,14 @@ function waitForScene(scene) {
 
 async function loadMuseumConfig(configUrl) {
   const response = await fetch(configUrl, { credentials: 'omit' });
-  if (!response.ok) throw new Error(`无法读取配置 ${configUrl}（${response.status}）`);
+  if (!response.ok) throw new Error(`Could not load configuration ${configUrl} (${response.status})`);
   return response.json();
 }
 
 async function startMuseum(configUrl) {
   const ui = new MuseumUI();
   try {
-    ui.progress(16, '正在准备博物馆', '读取 JSON 配置…');
+    ui.progress(16, 'Preparing the museum', 'Reading the JSON configuration…');
     const params = new URLSearchParams(window.location.search);
     const spawnRequest = parseSpawnRequest(params, window.location.hostname);
     const config = await loadMuseumConfig(configUrl);
@@ -111,7 +111,7 @@ async function startMuseum(configUrl) {
       return;
     }
 
-    ui.progress(38, '正在计算参观路线', '布置房间、走廊与电梯…');
+    ui.progress(38, 'Planning your route', 'Placing rooms, corridors, and elevators…');
     const layout = buildMuseumLayout(config);
     const scene = document.getElementById('museum-scene');
     await waitForScene(scene);
@@ -121,7 +121,7 @@ async function startMuseum(configUrl) {
       teleporters: [document.getElementById('left-ray'), document.getElementById('right-ray')],
       inputs: document.querySelectorAll('[data-vr-movement]')
     });
-    ui.progress(58, '正在布置大厅', '准备灯光、展墙和欢迎展品…');
+    ui.progress(58, 'Setting up the lobby', 'Preparing lighting, gallery walls, and the welcome exhibit…');
     const app = new MuseumScene({
       scene,
       root: document.getElementById('museum-root'),
@@ -134,7 +134,7 @@ async function startMuseum(configUrl) {
     });
     window.museumApp = app;
     await app.initialize();
-    ui.progress(100, '博物馆已经开放', '祝你参观愉快。');
+    ui.progress(100, 'The museum is open', 'Enjoy your visit.');
     window.setTimeout(() => ui.ready(), 420);
 
     scene.addEventListener('enter-vr', () => {
@@ -153,7 +153,7 @@ async function startMuseum(configUrl) {
     }, { once: true });
   } catch (error) {
     console.error(error);
-    ui.fail([error.message || '未知错误']);
+    ui.fail([error.message || 'Unknown error']);
   }
 }
 
@@ -161,7 +161,7 @@ function createMuseumCard(museum, onSelect) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'museum-card';
-  button.innerHTML = `<span class="museum-card-mark" aria-hidden="true"></span><span><strong>${escapeHtml(museum.title)}</strong><small>${escapeHtml(museum.description || '进入展馆，开始自由参观')}</small></span><span class="museum-card-arrow" aria-hidden="true">→</span>`;
+  button.innerHTML = `<span class="museum-card-mark" aria-hidden="true"></span><span><strong>${escapeHtml(museum.title)}</strong><small>${escapeHtml(museum.description || 'Enter the museum and explore at your own pace')}</small></span><span class="museum-card-arrow" aria-hidden="true">→</span>`;
   button.addEventListener('click', () => onSelect(museum.config));
   return button;
 }
@@ -180,22 +180,22 @@ async function setupWelcome() {
   try {
     const manifest = await loadMuseumConfig('/museums/index.json');
     const museums = Array.isArray(manifest.museums) ? manifest.museums : [];
-    count.textContent = `${museums.length} 个馆藏`;
+    count.textContent = `${museums.length} museum${museums.length === 1 ? '' : 's'}`;
     if (!museums.length) {
-      list.textContent = '暂时没有可参观的博物馆。';
+      list.textContent = 'There are no museums to visit yet.';
     } else {
       museums.forEach((museum) => list.appendChild(createMuseumCard(museum, start)));
     }
   } catch (error) {
-    count.textContent = '无法读取馆藏';
-    status.textContent = '本地博物馆目录暂时无法读取，你仍可以导入 JSON 游览。';
+    count.textContent = 'Could not load museums';
+    status.textContent = 'The local museum catalog is unavailable, but you can still import a JSON tour.';
     console.error(error);
   }
 
   importer.addEventListener('change', async () => {
     const file = importer.files?.[0];
     if (!file) return;
-    status.textContent = '正在检查导入的游览…';
+    status.textContent = 'Checking the imported tour…';
     try {
       const config = JSON.parse(await file.text());
       const validation = validateMuseumConfig(config);
@@ -203,7 +203,7 @@ async function setupWelcome() {
       const configUrl = URL.createObjectURL(new Blob([JSON.stringify(config)], { type: 'application/json' }));
       start(configUrl);
     } catch (error) {
-      status.textContent = `无法导入：${error.message || 'JSON 格式不正确'}`;
+      status.textContent = `Could not import: ${error.message || 'Invalid JSON'}`;
       importer.value = '';
     }
   });

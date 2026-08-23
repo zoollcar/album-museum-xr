@@ -207,7 +207,7 @@ export class FrameBudgetScheduler {
   complete(task) {
     task.state = 'complete';
     task.completedWeight = task.totalWeight;
-    this.report(task, '完成', 1);
+    this.report(task, 'Complete', 1);
     this.tasks.delete(task.id);
     task.resolve();
   }

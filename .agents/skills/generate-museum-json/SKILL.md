@@ -5,31 +5,31 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 
 # Generate Museum JSON
 
-生成应用可以直接加载的博物馆配置。不要在 JSON 中写注释、尾逗号、房间坐标或本文未列出的字段。
+Create museum configurations that the application can load directly. Do not put comments, trailing commas, room coordinates, or fields not documented here in JSON.
 
-## 工作流
+## Workflow
 
-1. 阅读用户提供的照片、分组、标题和叙事要求；信息缺失时只补保守的展示文案，不虚构拍摄地点或日期。
-2. 选择模板并规划所有房间、板块和门连接。确保每个展厅都能从大厅到达。
-3. 按下述契约生成 UTF-8 JSON。优先使用两空格缩进，并在文件末尾保留换行。
-4. 若要让欢迎页显示新博物馆，同时在 `public/museums/index.json` 添加入口；`config` 使用 `/museums/<file>.json` 形式。
-5. 从项目根目录运行零依赖检查器：
+1. Read the supplied photos, groups, titles, and narrative requirements. When information is missing, add only conservative display copy; never invent a capture location or date.
+2. Choose templates and plan all rooms, sections, and door connections. Every gallery must be reachable from the lobby.
+3. Generate UTF-8 JSON that follows the contract below. Prefer two-space indentation and retain a final newline.
+4. To display a new museum on the welcome screen, add it to `public/museums/index.json` with `config` in the form `/museums/<file>.json`.
+5. Run the zero-dependency checker from the project root:
 
    ```bash
    node .agents/skills/generate-museum-json/scripts/check-museum-json.mjs public/museums/<file>.json
    ```
 
-6. 修改了项目配置实现时，再运行 `npm test`；交付新配置前至少运行检查器。
+6. Run `npm test` when changing configuration implementation. Always run the checker before delivering a new configuration.
 
-## 顶层格式
+## Top-level shape
 
-只允许四个顶层字段，且全部必填：
+Exactly four top-level fields are allowed, and all are required:
 
 ```json
 {
   "version": 1,
   "museum": {
-    "title": "我的博物馆",
+    "title": "My Museum",
     "lobby": { "id": "lobby", "template": "lobby-atrium" }
   },
   "rooms": [],
@@ -37,60 +37,60 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 }
 ```
 
-- `version`：必须为数字 `1`。
-- `museum`：博物馆与大厅信息。
-- `rooms`：展厅数组；大厅不要重复放入此数组。
-- `connections`：门之间的无向连接数组。
+- `version` must be the number `1`.
+- `museum` contains museum and lobby information.
+- `rooms` is the gallery array; do not repeat the lobby here.
+- `connections` is an array of undirected connections between doors.
 
-所有对象都拒绝未声明字段。
+All objects reject undeclared fields.
 
-## museum 与 lobby
+## `museum` and `lobby`
 
-`museum`：
+`museum` fields:
 
-| 字段 | 要求 |
+| Field | Requirement |
 | --- | --- |
-| `title` | 必填，非空字符串 |
-| `subtitle` | 可选字符串 |
-| `intro` | 可选字符串 |
-| `heroImage` | 可选，使用“图片源”格式 |
-| `backgroundMusic` | 可选，全馆默认背景音乐 |
-| `lobby` | 必填，大厅对象 |
+| `title` | Required, non-empty string |
+| `subtitle` | Optional string |
+| `intro` | Optional string |
+| `heroImage` | Optional image-source object |
+| `backgroundMusic` | Optional museum-wide default music |
+| `lobby` | Required lobby object |
 
-`lobby`：
+`lobby` fields:
 
-| 字段 | 要求 |
+| Field | Requirement |
 | --- | --- |
-| `id` | 必填；以英文字母开头，之后仅字母、数字、`_`、`-`；必须与所有展厅 ID 唯一 |
-| `template` | 必须为 `lobby-atrium` |
-| `theme` | 可选主题 |
-| `doorStyle` | 可选普通门样式 |
-| `elevatorDoorStyle` | 可选电梯门样式 |
-| `backgroundMusic` | 可选；仅在大厅覆盖全馆默认背景音乐 |
+| `id` | Required; starts with a letter and then contains only letters, numbers, `_`, or `-`; unique among all gallery IDs |
+| `template` | Must be `lobby-atrium` |
+| `theme` | Optional theme |
+| `doorStyle` | Optional standard-door style |
+| `elevatorDoorStyle` | Optional elevator-door style |
+| `backgroundMusic` | Optional; overrides the museum default only in the lobby |
 
-大厅有 `door-1` 至 `door-6` 六个门位。主视觉 `heroImage` 不计入展厅照片。
+The lobby has six door slots, `door-1` through `door-6`. Its `heroImage` does not count as a gallery photo.
 
-大厅和展厅的门口净空、墙面展图位置、家具位置及文字自动换行均由运行时模板统一决定；JSON 不接受坐标、朝向或其他视觉布局字段。运行时会优先缩小过长文字，仍无法容纳时以省略号显示，避免遮挡相邻内容。
+Runtime templates determine doorway clearance, wall-photo positions, furniture positions, and text wrapping for both lobbies and galleries. JSON does not accept coordinates, orientations, or other visual-layout fields. The runtime shrinks overly long text first and uses an ellipsis if it still cannot fit, avoiding overlap with neighboring content.
 
-## rooms、blocks 与 photos
+## `rooms`, `blocks`, and `photos`
 
-每个展厅只允许：
+Each gallery accepts only:
 
-| 字段 | 要求 |
+| Field | Requirement |
 | --- | --- |
-| `id` | 必填，格式同大厅 ID，且全局唯一 |
-| `template` | 必填，见模板表 |
-| `title` | 必填，非空字符串 |
-| `intro` | 可选字符串 |
-| `theme` | 可选主题 |
-| `doorStyle` | 可选普通门样式 |
-| `elevatorDoorStyle` | 可选电梯门样式 |
-| `backgroundMusic` | 可选；仅在该展厅覆盖全馆默认背景音乐 |
-| `blocks` | 必填，板块数组 |
+| `id` | Required, same format as the lobby ID, globally unique |
+| `template` | Required; see the template table |
+| `title` | Required, non-empty string |
+| `intro` | Optional string |
+| `theme` | Optional theme |
+| `doorStyle` | Optional standard-door style |
+| `elevatorDoorStyle` | Optional elevator-door style |
+| `backgroundMusic` | Optional; overrides the museum default only in this gallery |
+| `blocks` | Required section array |
 
-每个板块只允许 `title`（可选字符串）、`description`（可选字符串）和 `photos`（必填数组）。板块用于策展分组，不配置位置。
+Each section accepts only optional string `title`, optional string `description`, and required array `photos`. Sections are curatorial groups and do not define positions.
 
-每张照片只允许：
+Each photo accepts only:
 
 ```json
 {
@@ -99,23 +99,23 @@ description: Generate, edit, review, or validate museum configuration JSON for t
     "medium": "https://images.example.com/photo-2048.webp",
     "low": "https://images.example.com/photo-512.webp"
   },
-  "title": "雨后的新宿",
-  "location": "东京",
+  "title": "Shinjuku After Rain",
+  "location": "Tokyo",
   "date": "2025-04-12",
-  "description": "傍晚沿街散步时拍摄。",
-  "alt": "雨后的东京街道"
+  "description": "Taken during an evening walk along the street.",
+  "alt": "A Tokyo street after rain"
 }
 ```
 
-- `sources` 必填；`original` 为非空字符串且必填，`medium`、`low` 为可选非空字符串。
-- `title`、`location`、`date`、`description`、`alt` 均为可选字符串。
-- 优先提供三档图片 URL；缺少 `medium` 或 `low` 时应用会回退到原图，增加下载流量。
-- 写有事实含义的 `location`、`date`、`description` 前先确认来源；无法确认时省略。
-- 为无障碍体验尽量提供准确的 `alt`，但不要用文件名冒充描述。
+- `sources` is required and `original` must be a non-empty string. `medium` and `low` are optional non-empty strings.
+- `title`, `location`, `date`, `description`, and `alt` are all optional strings.
+- Prefer all three image URL sizes. When `medium` or `low` is absent, the app falls back to the original image, increasing download traffic.
+- Verify the source before writing factual `location`, `date`, or `description`; omit them when they cannot be confirmed.
+- Provide accurate `alt` text for accessibility whenever possible, but do not pass off a filename as a description.
 
-## 背景音乐
+## Background music
 
-`museum.backgroundMusic` 为全馆默认音乐；`museum.lobby.backgroundMusic` 或任一 `rooms[]` 的 `backgroundMusic` 会在参观者进入该房间时覆盖默认音乐。离开独特音乐房间后会恢复全馆默认音乐。
+`museum.backgroundMusic` is the museum-wide default. `museum.lobby.backgroundMusic` or a gallery's `backgroundMusic` overrides it while the visitor is in that room. Leaving a room with its own music restores the museum default.
 
 ```json
 {
@@ -124,35 +124,35 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 }
 ```
 
-- `url` 必填，必须是非空字符串。远程音频须允许浏览器直接加载；部署环境应使用 HTTPS。
-- `volume` 可选，必须是 `0` 到 `1` 的数字；省略时使用 `0.35`。
-- 音乐会循环播放。浏览器若限制自动播放，应用会在参观者下一次点击、按键或 XR 交互时开始播放。
-- 房间未配置 `backgroundMusic` 时继承全馆默认音乐；完全不配置则静音。
-- 使用有明确授权的音乐，并自行保存作者、来源和许可证记录。不要把许可证不明的链接写进配置。
+- `url` is required and must be a non-empty string. Remote audio must be directly loadable by browsers; deployments should use HTTPS.
+- `volume` is optional, must be a number from `0` to `1`, and defaults to `0.35`.
+- Music loops. If autoplay is restricted, playback begins with the visitor's next click, key press, or XR interaction.
+- Rooms without `backgroundMusic` inherit the museum-wide default; omitting all music fields leaves the museum silent.
+- Use audio with clear permission, and retain author, source, and license records. Do not add links with unknown licensing.
 
-## 模板与容量
+## Templates and capacity
 
-| 模板 | 最大板块 | 照片上限 | 可连接门位 |
+| Template | Max sections | Photo limit | Connectable door slots |
 | --- | ---: | ---: | --- |
-| `gallery-small` | 2 | 16 | `door-1`、`door-2` |
-| `gallery-medium` | 3 | 24 | `door-1`、`door-2`、`door-3` |
-| `gallery-large` | 4 | 36 | `door-1`、`door-2`、`door-3`、`door-4` |
+| `gallery-small` | 2 | 16 | `door-1`, `door-2` |
+| `gallery-medium` | 3 | 24 | `door-1`, `door-2`, `door-3` |
+| `gallery-large` | 4 | 36 | `door-1`, `door-2`, `door-3`, `door-4` |
 
-照片上限按一个房间所有板块的照片总数计算。只有连接中使用的门才显示；不要为未使用门写占位连接。
+The photo limit is the total across all sections in one room. Only doors used by a connection are displayed; do not add placeholder connections for unused doors.
 
-已连接门周围会自动保留电梯和步行出口净空，图片与地面展品会避开该区域；内容作者无需也不能手工指定绕行坐标。
+Connected doors automatically reserve clearance for elevator and walking exits. Images and floor exhibits avoid that area; content authors neither need nor can specify detour coordinates.
 
-## 主题与门样式
+## Themes and door styles
 
-- `theme`：`classic`、`botanical`、`art-deco`、`terrazzo`。
-- `doorStyle`：`classic-oak`、`sage-panel`、`deco-walnut`、`modern-ash`。
-- `elevatorDoorStyle`：`elevator-brushed`、`elevator-bronze`、`elevator-dark`。
+- `theme`: `classic`, `botanical`, `art-deco`, `terrazzo`.
+- `doorStyle`: `classic-oak`, `sage-panel`, `deco-walnut`, `modern-ash`.
+- `elevatorDoorStyle`: `elevator-brushed`, `elevator-bronze`, `elevator-dark`.
 
-主题和门样式都可省略。不要把普通门样式写入 `elevatorDoorStyle`，反之亦然。
+Themes and door styles are optional. Do not put a standard-door style in `elevatorDoorStyle`, or an elevator-door style in `doorStyle`.
 
-## connections
+## `connections`
 
-每条连接必须有且只能有 `from`、`to`，以及可选的 `elevatorDoorStyle`：
+Every connection must contain exactly `from` and `to`, with optional `elevatorDoorStyle`:
 
 ```json
 {
@@ -162,19 +162,19 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 }
 ```
 
-同时满足：
+The following all apply:
 
-- 端点格式为 `<room-id>.door-<正整数>`。
-- 两端必须引用已存在的不同端点，并且门号属于对应模板。
-- 一个门位最多出现在一条连接中。
-- 所有展厅必须通过连接图从大厅可达。
-- 不要指定连接类型、走廊、电梯、位置或旋转；布局器根据距离与冲突自动选择直连、走廊或电梯。
+- Endpoints use `<room-id>.door-<positive integer>`.
+- Both endpoints refer to different existing rooms, and each door number belongs to its room template.
+- A door slot appears in at most one connection.
+- Every gallery must be reachable from the lobby through the connection graph.
+- Do not specify connection type, corridors, elevators, positions, or rotations. The layout engine selects a direct connection, corridor, or elevator from distance and conflicts.
 
-## 完成检查
+## Completion checklist
 
-- 确认 JSON 可解析、没有额外字段，ID 和枚举值拼写正确。
-- 确认板块数、照片数和门号没有超过模板容量。
-- 确认没有重复 ID、重复门位、自连接或孤立展厅。
-- 确认每张照片有 `sources.original`，远程图片服务允许浏览器跨域读取。
-- 确认背景音乐 URL 可公开访问、使用 HTTPS，并且音频授权适合项目用途。
-- 运行 `scripts/check-museum-json.mjs` 并修复全部错误；不要仅凭目测宣布完成。
+- Confirm the JSON parses, has no additional fields, and uses correctly spelled IDs and enum values.
+- Confirm section count, photo count, and door numbers do not exceed template capacity.
+- Confirm there are no duplicate IDs, duplicate door slots, self-connections, or isolated galleries.
+- Confirm every photo has `sources.original` and the remote image service permits browser cross-origin reads.
+- Confirm background-music URLs are publicly accessible over HTTPS and their licensing suits the project.
+- Run `scripts/check-museum-json.mjs` and fix every error; do not declare completion from visual inspection alone.

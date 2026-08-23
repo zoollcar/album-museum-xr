@@ -11,7 +11,7 @@ describe('FrameBudgetScheduler', () => {
     const clock = controlledClock();
     const progress = [];
     const scheduler = new FrameBudgetScheduler({ now: clock.now });
-    const steps = Array.from({ length: 3 }, () => ({ label: '工作', run: () => clock.advance(.6) }));
+    const steps = Array.from({ length: 3 }, () => ({ label: 'Work', run: () => clock.advance(.6) }));
     const first = scheduler.enqueue({ id: 'room:a', steps, onProgress: ({ progress: value }) => progress.push(value) });
     expect(scheduler.enqueue({ id: 'room:a', steps })).toBe(first);
     scheduler.runFrame(0);

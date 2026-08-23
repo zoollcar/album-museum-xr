@@ -40,7 +40,7 @@ describe('museum config validation', () => {
   it('accepts global and per-room background music and validates volume', () => {
     const config = museumConfig({
       museum: {
-        title: '测试博物馆',
+        title: 'Test Museum',
         backgroundMusic: { url: 'https://media.example.com/global.mp3', volume: 0.25 },
         lobby: { id: 'lobby', template: 'lobby-atrium', backgroundMusic: { url: 'https://media.example.com/lobby.mp3' } }
       },
@@ -64,15 +64,15 @@ describe('museum config validation', () => {
     });
     const result = validateMuseumConfig(config);
     expect(result.valid).toBe(false);
-    expect(result.errors.join('\n')).toContain('没有 door-3');
-    expect(result.errors.join('\n')).toContain('被重复连接');
+    expect(result.errors.join('\n')).toContain('has no door-3');
+    expect(result.errors.join('\n')).toContain('connected more than once');
   });
 
   it('enforces per-template photo capacity', () => {
     const config = museumConfig({ rooms: [room('room-a', 'gallery-small', Array.from({ length: 17 }, () => photo()))] });
     const result = validateMuseumConfig(config);
     expect(result.valid).toBe(false);
-    expect(result.errors.join('\n')).toContain('超过 gallery-small 的 16 张上限');
+    expect(result.errors.join('\n')).toContain('exceeding the 16-photo limit for gallery-small');
   });
 
   it('rejects rooms that cannot be reached from the lobby', () => {
@@ -80,6 +80,6 @@ describe('museum config validation', () => {
     const result = validateMuseumConfig(config);
     expect(result.valid).toBe(false);
     expect(result.errors.join('\n')).toContain('room-b');
-    expect(result.errors.join('\n')).toContain('无法从大厅到达');
+    expect(result.errors.join('\n')).toContain('cannot be reached from the lobby');
   });
 });

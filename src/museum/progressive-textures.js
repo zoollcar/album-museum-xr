@@ -146,7 +146,7 @@ export class ProgressiveTextureManager {
           id: `texture:${item.id}:${tier}:${Date.now()}`,
           owner: `texture:${item.roomId}`,
           priority: this.roomPriorities.get(item.roomId) || 'background',
-          steps: [{ label: '加载预览图', run: commit }]
+          steps: [{ label: 'Loading previews', run: commit }]
         });
         await task.promise;
       } else commit();
@@ -161,9 +161,9 @@ export class ProgressiveTextureManager {
         if (!this.reportedFailures.has(error)) {
           this.reportedFailures.add(error);
           const suffix = failure.exhausted
-            ? '；已停止自动重试。'
-            : `；将在稍后重试（${failure.attempts}/${this.retryDelays.length + 1}）。`;
-          this.onError(`照片加载失败：${source.url}${suffix}`, error);
+            ? '; automatic retries have stopped.'
+            : `; retrying later (${failure.attempts}/${this.retryDelays.length + 1}).`;
+          this.onError(`Could not load photo: ${source.url}${suffix}`, error);
         }
       }
     } finally {
@@ -197,7 +197,7 @@ export class ProgressiveTextureManager {
       return;
     }
     const mesh = item.plane.getObject3D('mesh');
-    if (!mesh) throw new Error('照片平面尚未创建。');
+    if (!mesh) throw new Error('Photo plane has not been created yet.');
     const oldTexture = item.texture;
     mesh.material.map = texture;
     mesh.material.color.set('#ffffff');
@@ -216,7 +216,7 @@ export class ProgressiveTextureManager {
     };
     if (!immediate && this.scheduler) {
       const task = this.scheduler.enqueue({ id: `texture-dispose:${++this.disposeSequence}`, owner, priority: 'cleanup', steps: [dispose] });
-      task.promise.catch((error) => { if (error.name !== 'AbortError') this.onError('纹理释放失败。', error); });
+      task.promise.catch((error) => { if (error.name !== 'AbortError') this.onError('Could not release texture.', error); });
     } else dispose();
   }
 

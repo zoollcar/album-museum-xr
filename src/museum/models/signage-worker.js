@@ -31,14 +31,14 @@ self.addEventListener('message', async ({ data }) => {
     if (options.signStyle === 'slogan' && options.align !== 'center') { context.fillStyle = style.accent; context.fillRect(padding, 34, Math.min(180, width * .14), 5); }
     if (options.signStyle === 'wall-label') { context.fillStyle = '#7b6043'; context.fillRect(22, 42, 4, Math.max(160, textureHeight - 84)); }
     const textPlan = planSignage({ ...options, width: displayWidth, height: displayHeight, textureWidth: width, textureHeight,
-      measureText: (text, size) => { context.font = `400 ${size}px "Segoe UI", "Microsoft YaHei", sans-serif`; return context.measureText(text).width; } });
+      measureText: (text, size) => { context.font = `400 ${size}px "Segoe UI", sans-serif`; return context.measureText(text).width; } });
     if (textPlan.title) {
       context.fillStyle = style.accent;
-      context.font = `600 ${textPlan.titleSize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
+      context.font = `600 ${textPlan.titleSize}px "Segoe UI", sans-serif`;
       context.fillText(textPlan.title, x, textPlan.titleTop);
     }
     context.fillStyle = style.color;
-    context.font = `400 ${textPlan.bodySize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
+    context.font = `400 ${textPlan.bodySize}px "Segoe UI", sans-serif`;
     textPlan.rows.forEach((row, index) => context.fillText(row, x, textPlan.bodyTop + index * (textPlan.bodySize + textPlan.lineGap)));
     const bitmap = await createGpuReadySignageBitmap(canvas);
     self.postMessage({ id: data.id, bitmap }, [bitmap]);

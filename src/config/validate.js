@@ -20,16 +20,16 @@ export function validateMuseumConfig(config) {
   const rooms = new Map();
   const lobby = { ...config.museum.lobby, title: config.museum.title, blocks: [] };
   for (const room of [lobby, ...config.rooms]) {
-    if (rooms.has(room.id)) errors.push(`房间 ID “${room.id}” 重复。`);
+    if (rooms.has(room.id)) errors.push(`Room ID “${room.id}” is duplicated.`);
     rooms.set(room.id, room);
     const template = getTemplate(room.template);
     if (!template) continue;
     if ((room.blocks || []).length > template.maxBlocks) {
-      errors.push(`房间 “${room.id}” 超过 ${room.template} 的 ${template.maxBlocks} 个板块上限。`);
+      errors.push(`Room “${room.id}” exceeds the ${template.maxBlocks}-section limit for ${room.template}.`);
     }
     const photos = roomPhotoCount(room);
     if (photos > template.maxPhotos) {
-      errors.push(`房间 “${room.id}” 有 ${photos} 张照片，超过 ${room.template} 的 ${template.maxPhotos} 张上限。`);
+      errors.push(`Room “${room.id}” has ${photos} photos, exceeding the ${template.maxPhotos}-photo limit for ${room.template}.`);
     }
   }
 
@@ -38,19 +38,19 @@ export function validateMuseumConfig(config) {
   for (const [index, connection] of config.connections.entries()) {
     const from = parseEndpoint(connection.from);
     const to = parseEndpoint(connection.to);
-    if (connection.from === connection.to) errors.push(`连接 ${index + 1} 的两端不能相同。`);
+    if (connection.from === connection.to) errors.push(`Connection ${index + 1} cannot use the same endpoint twice.`);
     for (const endpoint of [from, to]) {
       const room = rooms.get(endpoint.roomId);
       if (!room) {
-        errors.push(`连接 ${index + 1} 引用了不存在的房间 “${endpoint.roomId}”。`);
+        errors.push(`Connection ${index + 1} references missing room “${endpoint.roomId}”.`);
         continue;
       }
       const template = getTemplate(room.template);
       if (!template.doors.some((door) => door.id === endpoint.doorId)) {
-        errors.push(`房间 “${endpoint.roomId}” 的模板 ${room.template} 没有 ${endpoint.doorId}。`);
+        errors.push(`Room “${endpoint.roomId}” uses ${room.template}, which has no ${endpoint.doorId}.`);
       }
       const key = `${endpoint.roomId}.${endpoint.doorId}`;
-      if (usedEndpoints.has(key)) errors.push(`门 “${key}” 被重复连接。`);
+      if (usedEndpoints.has(key)) errors.push(`Door “${key}” is connected more than once.`);
       usedEndpoints.add(key);
     }
     if (rooms.has(from.roomId) && rooms.has(to.roomId)) {
@@ -67,7 +67,7 @@ export function validateMuseumConfig(config) {
     visited.add(id);
     queue.push(...(graph.get(id) || []));
   }
-  for (const room of config.rooms) if (!visited.has(room.id)) errors.push(`房间 “${room.id}” 无法从大厅到达。`);
+  for (const room of config.rooms) if (!visited.has(room.id)) errors.push(`Room “${room.id}” cannot be reached from the lobby.`);
 
   return { valid: errors.length === 0, errors };
 }
