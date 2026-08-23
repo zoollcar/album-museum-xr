@@ -1,16 +1,14 @@
-# Personal Travel Museum XR
+# Album Museum XR
 
 Turn a photo collection into a walkable WebXR museum with one JSON file. Personal Travel Museum XR builds galleries, connections, image captions, and an explorable 3D route from your content—no scene editing required.
 
 **Try it now:** [https://album-museum-xr.hitorisama.org/](https://album-museum-xr.hitorisama.org/)
 
-The included demo, **The Living JSON Museum**, is a guided tour of the project itself.
-
 ## Highlights
 
+- Pure front-end project with skill guide AI to generate museum.
 - Create a museum from portable JSON instead of manually placing 3D objects.
 - Explore on desktop, mobile, and WebXR headsets.
-- Navigate connected galleries through doors, corridors, and elevators.
 - Keep large collections responsive with progressive image loading.
 - Customize room themes, door styles, captions, and optional background music.
 
@@ -19,7 +17,7 @@ The included demo, **The Living JSON Museum**, is a guided tour of the project i
 **Requirement:** Node.js.
 
 ```bash
-git clone <your-fork-or-repository-url>
+git clone https://github.com/zoollcar/album-museum-xr.git
 cd album-museum-xr
 npm install
 npm run dev
@@ -28,6 +26,9 @@ npm run dev
 Open the local URL printed by Vite, then choose **The Living JSON Museum** from the welcome screen.
 
 ## Create your museum
+Tell your AI to use skill: .agents/skills/generate-museum-json. Let it cook.
+
+Or do it manually:
 
 1. Copy `public/museums/project-showcase.json` to a new file in `public/museums/`.
 2. Replace its titles, text, and image URLs with your own collection.
@@ -37,12 +38,6 @@ Open the local URL printed by Vite, then choose **The Living JSON Museum** from 
    ```bash
    npm run validate:config -- public/museums/my-museum.json
    ```
-
-To open a hosted configuration directly, use a `config` query parameter:
-
-```text
-https://museum.example.com/?config=https://static.example.com/my-museum.json
-```
 
 For the JSON format, image hosting, themes, deployment requirements, and other implementation details, see the [technical reference](docs/technical-reference.md).
 
