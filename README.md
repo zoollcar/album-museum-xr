@@ -65,6 +65,10 @@ npm run validate:config     # Validate the included museum configuration
 
 Contributions and museum examples are welcome. Please keep changes focused, run `npm test` and `npm run build`, and validate every edited museum configuration before opening a pull request.
 
+## Credits
+
+This project is adapted from [AdaRoseCannon/aframe-xr-boilerplate](https://github.com/AdaRoseCannon/aframe-xr-boilerplate), an A-Frame WebXR starter kit by Ada Rose Cannon.
+
 ## License
 
 This project is released under the [MIT License](LICENSE).
