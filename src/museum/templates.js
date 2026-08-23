@@ -1,4 +1,9 @@
 const port = (id, wall, offset = 0) => ({ id: `door-${id}`, wall, offset });
+const layout = (photoWalls = []) => ({
+  // Door clearances are semantic space reservations, not author-facing geometry.
+  wallDoorClearance: 1.65,
+  photoWalls: photoWalls.map((wall) => ({ wall, rows: [1.65, 3.05] }))
+});
 
 export const TEMPLATE_DEFINITIONS = {
   'lobby-atrium': {
@@ -15,6 +20,7 @@ export const TEMPLATE_DEFINITIONS = {
       port(4, 'south', 4.5), port(5, 'south', -4.5),
       port(6, 'west')
     ],
+    layout: layout(),
     palette: { wall: '#eee4d7', floor: '#b58a61', accent: '#8e704c' }
   },
   'gallery-small': {
@@ -26,6 +32,7 @@ export const TEMPLATE_DEFINITIONS = {
     maxBlocks: 2,
     maxPhotos: 16,
     doors: [port(1, 'west'), port(2, 'east')],
+    layout: layout(['north', 'south', 'west', 'east']),
     palette: { wall: '#f0e7dc', floor: '#aa7d54', accent: '#876947' }
   },
   'gallery-medium': {
@@ -37,6 +44,7 @@ export const TEMPLATE_DEFINITIONS = {
     maxBlocks: 3,
     maxPhotos: 24,
     doors: [port(1, 'west'), port(2, 'north'), port(3, 'east')],
+    layout: layout(['north', 'east', 'west', 'south']),
     palette: { wall: '#f1e8dc', floor: '#ae825b', accent: '#8f704c' }
   },
   'gallery-large': {
@@ -48,6 +56,7 @@ export const TEMPLATE_DEFINITIONS = {
     maxBlocks: 4,
     maxPhotos: 36,
     doors: [port(1, 'west'), port(2, 'north'), port(3, 'east'), port(4, 'south')],
+    layout: layout(['north', 'east', 'west', 'south']),
     palette: { wall: '#f2e9de', floor: '#b18660', accent: '#8d704d' }
   }
 };

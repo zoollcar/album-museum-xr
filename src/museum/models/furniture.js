@@ -1,8 +1,8 @@
 import { box, entity } from './primitives.js';
 
-export function buildBench(parent, template) {
+export function buildBench(parent, template, position = null) {
   const z = template.kind === 'lobby' ? 2.2 : 0;
-  const group = entity('a-entity', { position: `0 0 ${z}` }, parent);
+  const group = entity('a-entity', { position: position || `0 0 ${z}` }, parent);
   box(group, { position: '0 .5 0', width: 3.15, height: .16, depth: .78, color: '#8f8174', material: 'color: #94877b; roughness: .96', collidable: true });
   box(group, { position: '0 .37 0', width: 2.95, height: .2, depth: .66, color: '#886a4e', material: 'src: url(/museum-assets/white-oak-floor.jpg); color: #8f7358; repeat: 2 1; roughness: .82' });
   for (const x of [-1.28, 1.28]) for (const dz of [-.25, .25]) {

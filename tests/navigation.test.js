@@ -66,11 +66,18 @@ describe('museum collision navigation', () => {
     expect(transferElevatorPosition(source, target, { x: 11.9, z: 3.45 })).toEqual({ x: -4.45, z: 7 });
   });
 
-  it('rotates the rig with the cabin so a door-facing visitor still faces the door', () => {
+  it('faces the opposite exit when both elevator endpoints use the same wall direction', () => {
+    const source = { yaw: 0 };
+    const target = { yaw: 0 };
+
+    expect(transferElevatorYaw(source, target, 0)).toBe(180);
+  });
+
+  it('rotates the view with the end-for-end cabin transfer across oriented endpoints', () => {
     const source = { yaw: 0 };
     const target = { yaw: 180 };
 
-    expect(transferElevatorYaw(source, target, 180)).toBe(360);
+    expect(transferElevatorYaw(source, target, 180)).toBe(180);
   });
 
   it('overlaps the inset room floor across an elevator threshold', () => {

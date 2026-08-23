@@ -1,4 +1,5 @@
 import { entity } from './primitives.js';
+import { planSignage } from '../signage-layout.js';
 
 const SIGN_STYLES = {
   slogan: { background: 'transparent', color: '#3b3027', accent: '#73583b', titleSize: 132, bodySize: 64, border: null },
@@ -11,20 +12,6 @@ let signageWorker = null;
 let signageRequestId = 0;
 const workerRequests = new Map();
 const pendingByRoom = new Map();
-
-function wrapCanvasText(context, text, maxWidth) {
-  if (!text) return [];
-  const rows = [];
-  let row = '';
-  for (const char of [...String(text)]) {
-    if (context.measureText(row + char).width > maxWidth && row) {
-      rows.push(row);
-      row = char;
-    } else row += char;
-  }
-  if (row) rows.push(row);
-  return rows;
-}
 
 function makeTextCanvas({
   title = '', lines = [], width: displayWidth = 2, height: displayHeight = 1,
@@ -59,21 +46,16 @@ function makeTextCanvas({
     context.fillStyle = '#7b6043';
     context.fillRect(22, 42, 4, Math.max(160, height - 84));
   }
-  if (title) {
+  const textPlan = planSignage({ title, lines, width: displayWidth, height: displayHeight, textureWidth: width, textureHeight, signStyle,
+    measureText: (text, size) => { context.font = `400 ${size}px "Segoe UI", "Microsoft YaHei", sans-serif`; return context.measureText(text).width; } });
+  if (textPlan.title) {
     context.fillStyle = style.accent;
-    context.font = `600 ${style.titleSize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
-    context.fillText(title, x, signStyle === 'slogan' && align !== 'center' ? 66 : 42);
+    context.font = `600 ${textPlan.titleSize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
+    context.fillText(textPlan.title, x, textPlan.titleTop);
   }
   context.fillStyle = style.color;
-  context.font = `400 ${style.bodySize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
-  let y = title ? 150 : 54;
-  for (const line of lines) {
-    for (const part of wrapCanvasText(context, line, width - padding * 2)) {
-      context.fillText(part, x, y);
-      y += style.bodySize + 16;
-      if (y > height - 36) break;
-    }
-  }
+  context.font = `400 ${textPlan.bodySize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
+  textPlan.rows.forEach((row, index) => context.fillText(row, x, textPlan.bodyTop + index * (textPlan.bodySize + textPlan.lineGap)));
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.needsUpdate = true;

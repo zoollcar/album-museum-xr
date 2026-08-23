@@ -5,12 +5,12 @@ import { box, createIncrementalTreeDisposer, entity, COLORS } from './models/pri
 import { getRoomTheme, surfaceMaterial } from './themes.js';
 import { textPlane, waitForRoomSignage } from './models/signage.js';
 import { skylightBuildSteps, trackLightBuildSteps, wallBuildSteps } from './models/room-shell.js';
-import { buildBench, buildPlant, decorCollectionSteps } from './models/furniture.js';
-import { additionalDecorSteps } from './models/decorations.js';
+import { buildTemplateDecor } from './models/template-decor.js';
 import { doorModelBuildSteps } from './models/door.js';
 import { resolveDoorStyle } from './models/door-styles.js';
 import { buildElevatorCabin } from './models/elevator.js';
 import { buildPhotoMount } from './models/exhibit.js';
+import { planRoomLayout } from './template-layout.js';
 import { BackgroundMusicManager, backgroundMusicForRoom } from './background-music.js';
 import { FrameBudgetScheduler } from './frame-budget-scheduler.js';
 import {
@@ -32,29 +32,6 @@ function performanceDiagnosticsEnabled() {
   if (import.meta.env.DEV) return true;
   return typeof window !== 'undefined'
     && new URLSearchParams(window.location.search).get('museumDebug') === '1';
-}
-
-function frameSlots(template, connectedDoorIds) {
-  const slots = [];
-  const walls = ['north', 'east', 'south', 'west'];
-  const doorClearances = new Map(walls.map((wall) => [wall, template.doors.filter((door) => door.wall === wall && connectedDoorIds.has(door.id)).map((door) => door.offset)]));
-  const rows = template.maxPhotos >= 30 ? [1.55, 3.3] : template.maxPhotos >= 20 ? [1.65, 3.3] : [1.65, 3.05];
-  for (const wall of walls) {
-    const horizontal = wall === 'north' || wall === 'south';
-    const length = horizontal ? template.width : template.depth;
-    const count = Math.max(2, Math.floor((length - 2) / 2.25));
-    for (const y of rows) {
-      for (let index = 0; index < count; index += 1) {
-        const offset = -length / 2 + 1.35 + index * ((length - 2.7) / Math.max(1, count - 1));
-        if (doorClearances.get(wall).some((doorOffset) => Math.abs(offset - doorOffset) < 1.65)) continue;
-        const slot = { wall, offset, y, maxWidth: index % 4 === 1 ? 2.35 : 1.72, maxHeight: index % 4 === 1 ? 1.5 : 1.32 };
-        if (horizontal) Object.assign(slot, { x: offset, z: wall === 'north' ? -template.depth / 2 + .145 : template.depth / 2 - .145, rotation: wall === 'north' ? '0 0 0' : '0 180 0' });
-        else Object.assign(slot, { x: wall === 'west' ? -template.width / 2 + .145 : template.width / 2 - .145, z: offset, rotation: wall === 'west' ? '0 90 0' : '0 -90 0' });
-        slots.push(slot);
-      }
-    }
-  }
-  return slots.slice(0, template.maxPhotos);
 }
 
 function hasCaption(photo) {
@@ -225,6 +202,7 @@ export class MuseumScene {
     group.dataset.roomId = roomId;
     const connectedDoorIds = this.connectedDoorIds(roomId);
     const theme = getRoomTheme(room);
+    const roomPlan = planRoomLayout(room, template, connectedDoorIds, theme.decor);
     const defaultSpawn = this.localToWorld(placement, 0, template.depth / 2 - 1.75);
     const steps = [
       { label: '准备房间结构', weight: 2, run: () => {
@@ -241,16 +219,16 @@ export class MuseumScene {
       ...['north', 'east', 'south', 'west'].flatMap((wall) => wallBuildSteps(group, room, wall, connectedDoorIds).map((run) => ({ label: '准备房间结构', run }))),
       ...skylightBuildSteps(group, template).map((run) => ({ label: '准备房间结构', run })),
       ...trackLightBuildSteps(group, template).map((run) => ({ label: '准备房间结构', run })),
-      { label: '布置展品', run: () => buildBench(group, template) },
-      ...decorCollectionSteps(group, template, theme.decor).map((run) => ({ label: '布置展品', weight: 2, run })),
-      ...additionalDecorSteps(group, template, theme.decor).map((run) => ({ label: '布置展品', weight: 2, run })),
+      { label: '布置展品', weight: 2, run: () => buildTemplateDecor(group, template, roomPlan.items) },
       { label: '布置展品', run: () => {
-        const bench = this.localToWorld(placement, 0, template.kind === 'lobby' ? 2.2 : 0);
-        this.registerSpawnAnchor(roomId, 'bench', { x: bench.x, z: bench.z, approach: rotateXZ(0, 1, placement.rotation) });
+        const bench = roomPlan.items.find((item) => item.type === 'bench');
+        if (!bench) return;
+        const world = this.localToWorld(placement, bench.x, bench.z);
+        this.registerSpawnAnchor(roomId, 'bench', { x: world.x, z: world.z, approach: rotateXZ(0, 1, placement.rotation) });
       } },
       ...(template.kind === 'lobby'
-        ? this.lobbyContentSteps(group, room, template)
-        : this.galleryContentSteps(group, room, template, connectedDoorIds)),
+        ? this.lobbyContentSteps(group, room, template, roomPlan)
+        : this.galleryContentSteps(group, room, template, connectedDoorIds, roomPlan)),
       ...(this.layout.adjacency.get(room.id) || []).flatMap((edge) => this.roomDoorBuildSteps(group, room, edge))
     ];
     const job = { roomId, state: 'preparing', stage: '正在搭建房间', detail: '', progress: 0, priority, group, handle: null, promise: null };
@@ -327,34 +305,34 @@ export class MuseumScene {
     return job.promise;
   }
 
-  lobbyContentSteps(group, room, template) {
+  lobbyContentSteps(group, room, template, roomPlan) {
     return [
       { label: '生成说明', weight: 2, run: () => textPlane(group, {
-        position: `-1.2 3.2 ${-template.depth / 2 + .16}`, rotation: '0 0 0', width: 7.8, height: 1.45,
-        title: this.config.museum.subtitle || 'PERSONAL MUSEUM', lines: [this.config.museum.title], align: 'left', signStyle: 'slogan'
+        ...roomPlan.signage.headline,
+        title: this.config.museum.subtitle || 'PERSONAL MUSEUM', lines: [this.config.museum.title], align: 'center'
       }) },
       { label: '生成说明', weight: 2, run: () => textPlane(group, {
-        position: `-5.45 1.5 ${-template.depth / 2 + .17}`, rotation: '0 0 0', width: 3.7, height: 1.45,
+        ...roomPlan.signage.welcome,
         title: 'WELCOME', lines: [this.config.museum.intro || '欢迎参观。'], signStyle: 'wall-label'
       }) },
       { label: '布置展品', run: () => {
         if (!this.config.museum.heroImage) return;
-        const frame = box(group, { position: `4.4 2.15 ${-template.depth / 2 + .16}`, width: 5.2, height: 3.0, depth: .08, color: COLORS.frame });
-        const plane = entity('a-plane', { position: `4.4 2.15 ${-template.depth / 2 + .215}`, width: 5, height: 2.8, material: 'color: #d7cdc0; roughness: .8', shadow: 'cast: false; receive: false' }, group);
-        plane.dataset.maxWidth = '5'; plane.dataset.maxHeight = '2.8';
+        const hero = roomPlan.hero;
+        const frame = box(group, { position: `${hero.x} ${hero.y} ${hero.z}`, rotation: hero.rotation, width: hero.maxWidth + .2, height: hero.maxHeight + .2, depth: .08, color: COLORS.frame });
+        const inset = hero.wall === 'east' ? -.05 : hero.wall === 'west' ? .05 : hero.wall === 'north' ? .05 : -.05;
+        const plane = entity('a-plane', { position: `${hero.x + (hero.wall === 'east' || hero.wall === 'west' ? inset : 0)} ${hero.y} ${hero.z + (hero.wall === 'north' || hero.wall === 'south' ? inset : 0)}`, rotation: hero.rotation, width: hero.maxWidth, height: hero.maxHeight, material: 'color: #d7cdc0; roughness: .8', shadow: 'cast: false; receive: false' }, group);
+        plane.dataset.maxWidth = String(hero.maxWidth); plane.dataset.maxHeight = String(hero.maxHeight);
         this.textureManager.register({
           id: `${room.id}-hero`, roomId: room.id, plane, frame,
           sources: this.config.museum.heroImage, label: '大厅主照片'
         });
-      } },
-      { label: '布置展品', run: () => { buildPlant(group, '-6.45 0 -4.65', { src: '/museum-assets/olive-tree.png', width: 2.1, height: 3.15, scale: .78 }); this.registerItemSpawn(room.id, 'plant-1', -6.45, -4.65); } },
-      { label: '布置展品', run: () => { buildPlant(group, '6.25 0 -4.75', { src: '/museum-assets/compact-fern.png', width: 1.55, height: 1.55, scale: .75 }); this.registerItemSpawn(room.id, 'plant-2', 6.25, -4.75); } }
+      } }
     ];
   }
 
-  galleryContentSteps(group, room, template, connectedDoorIds) {
+  galleryContentSteps(group, room, template, connectedDoorIds, roomPlan) {
     const photos = room.blocks.flatMap((block, blockIndex) => block.photos.map((photo) => ({ ...photo, blockTitle: block.title, blockIndex })));
-    const slots = frameSlots(template, connectedDoorIds);
+    const slots = roomPlan.slots;
     const slotsByWall = new Map(['north', 'east', 'west', 'south'].map((wall) => [wall, slots.filter((slot) => slot.wall === wall)]));
     const wallCursors = new Map([...slotsByWall.keys()].map((wall) => [wall, 0]));
     const wallOrder = ['north', 'east', 'west', 'south'];
@@ -368,8 +346,8 @@ export class MuseumScene {
     }).filter(({ slot }) => slot);
     const mounts = new Map();
     const steps = [{ label: '生成说明', weight: 2, run: () => textPlane(group, {
-      position: `${-template.width * .28} ${template.height - .82} ${-template.depth / 2 + .135}`, rotation: '0 0 0', width: Math.min(6.4, template.width * .48), height: .82,
-      title: room.title, lines: room.intro ? [room.intro] : [], align: 'left', signStyle: 'slogan'
+      ...roomPlan.signage.headline,
+      title: room.title, lines: room.intro ? [room.intro] : [], align: 'left'
     }) }];
     assigned.forEach(({ photo, slot }, index) => {
       steps.push({ label: '布置展品', weight: 2, run: () => {
@@ -394,12 +372,6 @@ export class MuseumScene {
         position: `${-slot.maxWidth / 2} ${slot.maxHeight / 2 + .36} .052`, width: 1.4, height: .34, title: photo.blockTitle || room.title, lines: [], signStyle: 'section'
       }) });
     });
-    if (template.width >= 18) steps.push({ label: '布置展品', run: () => {
-      const plantX = template.width / 2 - 1.25;
-      const plantZ = template.depth / 2 - 1.4;
-      buildPlant(group, `${plantX} 0 ${plantZ}`, { src: '/museum-assets/compact-fern.png', width: 1.55, height: 1.55, scale: .72 });
-      this.registerItemSpawn(room.id, 'plant-1', plantX, plantZ);
-    } });
     return steps;
   }
 
@@ -416,7 +388,7 @@ export class MuseumScene {
       if (!this.connectionViews.has(connection.id)) {
         this.connectionViews.set(connection.id, {
           connection, doors: [], connector: null, open: false, loading: false,
-          elevator: connection.kind === 'elevator' ? { openRoomId: null, phase: 'idle', exitRoomId: null } : null
+          elevator: connection.kind === 'elevator' ? { openRoomId: null, phase: 'idle', entryRoomId: null, exitRoomId: null } : null
         });
       }
       const doorWorldPort = worldPort(room, this.layout.placements.get(room.id), endpoint.doorId);
@@ -514,6 +486,7 @@ export class MuseumScene {
         if (view.elevator) {
           this.setElevatorDoor(view, request.roomId, { immediate: true });
           view.elevator.phase = 'awaiting-exit';
+          view.elevator.entryRoomId = null;
           view.elevator.exitRoomId = request.roomId;
         } else this.setConnectionOpen(view, true, { immediate: true });
       }
@@ -542,7 +515,11 @@ export class MuseumScene {
         this.ui.toast('门口有人，暂时不能关门。');
         return;
       }
-      if (view.elevator) this.setElevatorDoor(view, null);
+      if (view.elevator) {
+        this.setElevatorDoor(view, null);
+        view.elevator.entryRoomId = null;
+        view.elevator.exitRoomId = null;
+      }
       else this.setConnectionOpen(view, false);
       this.recordPerformanceEvent?.('door:closed', { connectionId, fromRoomId });
       return;
@@ -562,7 +539,13 @@ export class MuseumScene {
       });
       await this.ensureConnector(view.connection, { priority: 'interactive' });
       this.updateRoomDoorProgress(destination, { state: 'ready', stage: '完成', progress: 1 });
-      if (view.elevator) this.setElevatorDoor(view, fromRoomId);
+      if (view.elevator) {
+        // The room-side door is the A door. It is the only one that may open
+        // before travel; runElevator later opens only the other endpoint (B).
+        this.setElevatorDoor(view, fromRoomId);
+        view.elevator.entryRoomId = fromRoomId;
+        view.elevator.exitRoomId = null;
+      }
       else this.setConnectionOpen(view, true);
       this.ui.toast(`“${this.roomConfig(destination).title}”已开放。`, 2200);
       this.recordPerformanceEvent?.('door:load-ready', {
@@ -815,6 +798,7 @@ export class MuseumScene {
         if (hasExitedElevator(port, position)) {
           this.setElevatorDoor(view, null);
           view.elevator.phase = 'idle';
+          view.elevator.entryRoomId = null;
           view.elevator.exitRoomId = null;
         }
         continue;
@@ -835,6 +819,8 @@ export class MuseumScene {
 
   async runElevator(view, source, target) {
     view.elevator.phase = 'travelling';
+    view.elevator.entryRoomId = source.roomId;
+    view.elevator.exitRoomId = null;
     view.loading = true;
     this.setElevatorDoor(view, null);
     this.ui.toast('电梯门正在关闭…', 1200);
@@ -854,8 +840,12 @@ export class MuseumScene {
     });
     const constraint = this.rig.components?.['museum-walk-constraint'];
     constraint?.lastValid?.copy(this.rig.object3D.position);
+    // B must become both visibly and logically open in one operation. Using
+    // an immediate position update prevents a rendered-but-still-blocked frame
+    // after the rig is transferred to the destination cabin.
+    this.setElevatorDoor(view, target.roomId, { immediate: true });
     this.ui.toast(`已抵达“${targetRoom.title}”`, 1800);
-    this.setElevatorDoor(view, target.roomId);
+    view.elevator.entryRoomId = null;
     view.elevator.exitRoomId = target.roomId;
     view.elevator.phase = 'awaiting-exit';
     await new Promise((resolve) => window.setTimeout(resolve, 500));
@@ -924,6 +914,7 @@ export class MuseumScene {
       if (view.elevator) {
         this.setElevatorDoor(view, null, { immediate: true });
         view.elevator.phase = 'idle';
+        view.elevator.entryRoomId = null;
         view.elevator.exitRoomId = null;
       } else this.setConnectionOpen(view, false, { immediate: true });
     }

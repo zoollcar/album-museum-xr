@@ -73,9 +73,11 @@ export function transferElevatorPosition(fromPort, toPort, position) {
 }
 
 export function transferElevatorYaw(fromPort, toPort, yaw) {
-  // Ports use A-Frame yaw: 0 points north (-Z). Rotate the rig by the same
-  // amount as the cabin so a player facing the door keeps facing the door.
-  return yaw + toPort.yaw - fromPort.yaw;
+  // Position transfer turns the cabin end-for-end so the far door at the
+  // source becomes the room-side door at the destination. Apply the same
+  // half-turn to the visitor's view so the opposite door remains ahead.
+  const transferred = yaw + toPort.yaw - fromPort.yaw + 180;
+  return ((transferred % 360) + 360) % 360;
 }
 
 export function elevatorWalkRegion(port, connectionId, roomId) {

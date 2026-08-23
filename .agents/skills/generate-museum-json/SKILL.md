@@ -70,6 +70,8 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 
 大厅有 `door-1` 至 `door-6` 六个门位。主视觉 `heroImage` 不计入展厅照片。
 
+大厅和展厅的门口净空、墙面展图位置、家具位置及文字自动换行均由运行时模板统一决定；JSON 不接受坐标、朝向或其他视觉布局字段。运行时会优先缩小过长文字，仍无法容纳时以省略号显示，避免遮挡相邻内容。
+
 ## rooms、blocks 与 photos
 
 每个展厅只允许：
@@ -137,6 +139,8 @@ description: Generate, edit, review, or validate museum configuration JSON for t
 | `gallery-large` | 4 | 36 | `door-1`、`door-2`、`door-3`、`door-4` |
 
 照片上限按一个房间所有板块的照片总数计算。只有连接中使用的门才显示；不要为未使用门写占位连接。
+
+已连接门周围会自动保留电梯和步行出口净空，图片与地面展品会避开该区域；内容作者无需也不能手工指定绕行坐标。
 
 ## 主题与门样式
 

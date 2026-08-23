@@ -1,4 +1,5 @@
 import { createGpuReadySignageBitmap } from './signage-bitmap.js';
+import { planSignage } from '../signage-layout.js';
 
 const SIGN_STYLES = {
   slogan: { background: 'transparent', color: '#3b3027', accent: '#73583b', titleSize: 132, bodySize: 64, border: null },
@@ -6,18 +7,6 @@ const SIGN_STYLES = {
   brass: { background: '#5f4933', color: '#f6efe5', accent: '#f6efe5', titleSize: 88, bodySize: 44, border: '#a98960' },
   section: { background: 'transparent', color: '#3a312a', accent: '#765b3d', titleSize: 66, bodySize: 42, border: null }
 };
-
-function wrapCanvasText(context, text, maxWidth) {
-  if (!text) return [];
-  const rows = [];
-  let row = '';
-  for (const char of [...String(text)]) {
-    if (context.measureText(row + char).width > maxWidth && row) { rows.push(row); row = char; }
-    else row += char;
-  }
-  if (row) rows.push(row);
-  return rows;
-}
 
 self.addEventListener('message', async ({ data }) => {
   try {
@@ -41,19 +30,16 @@ self.addEventListener('message', async ({ data }) => {
     context.textBaseline = 'top';
     if (options.signStyle === 'slogan' && options.align !== 'center') { context.fillStyle = style.accent; context.fillRect(padding, 34, Math.min(180, width * .14), 5); }
     if (options.signStyle === 'wall-label') { context.fillStyle = '#7b6043'; context.fillRect(22, 42, 4, Math.max(160, textureHeight - 84)); }
-    if (options.title) {
+    const textPlan = planSignage({ ...options, width: displayWidth, height: displayHeight, textureWidth: width, textureHeight,
+      measureText: (text, size) => { context.font = `400 ${size}px "Segoe UI", "Microsoft YaHei", sans-serif`; return context.measureText(text).width; } });
+    if (textPlan.title) {
       context.fillStyle = style.accent;
-      context.font = `600 ${style.titleSize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
-      context.fillText(options.title, x, options.signStyle === 'slogan' && options.align !== 'center' ? 66 : 42);
+      context.font = `600 ${textPlan.titleSize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
+      context.fillText(textPlan.title, x, textPlan.titleTop);
     }
     context.fillStyle = style.color;
-    context.font = `400 ${style.bodySize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
-    let y = options.title ? 150 : 54;
-    for (const line of options.lines || []) for (const part of wrapCanvasText(context, line, width - padding * 2)) {
-      context.fillText(part, x, y);
-      y += style.bodySize + 16;
-      if (y > textureHeight - 36) break;
-    }
+    context.font = `400 ${textPlan.bodySize}px "Segoe UI", "Microsoft YaHei", sans-serif`;
+    textPlan.rows.forEach((row, index) => context.fillText(row, x, textPlan.bodyTop + index * (textPlan.bodySize + textPlan.lineGap)));
     const bitmap = await createGpuReadySignageBitmap(canvas);
     self.postMessage({ id: data.id, bitmap }, [bitmap]);
   } catch (error) {

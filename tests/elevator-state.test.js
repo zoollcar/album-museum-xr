@@ -30,7 +30,7 @@ describe('elevator door state', () => {
     const fromDoor = door('from');
     const toDoor = door('to');
     const view = {
-      elevator: { openRoomId: null, phase: 'idle', exitRoomId: null },
+      elevator: { openRoomId: null, phase: 'idle', entryRoomId: null, exitRoomId: null },
       doors: [fromDoor, toDoor],
       open: false
     };
@@ -46,5 +46,27 @@ describe('elevator door state', () => {
     expect(MuseumScene.prototype.isDoorOpen.call(scene, view, 'to')).toBe(true);
     expect(fromDoor.panels[0].element.setAttribute).toHaveBeenCalledWith('position', '-.5 1.3 0');
     expect(toDoor.panels[0].element.setAttribute).toHaveBeenCalledWith('position', '-1 1.3 0');
+  });
+
+  it('switches from the entry endpoint to the distinct exit endpoint', () => {
+    const fromDoor = door('from');
+    const toDoor = door('to');
+    const view = {
+      elevator: { openRoomId: 'from', phase: 'travelling', entryRoomId: 'from', exitRoomId: null },
+      doors: [fromDoor, toDoor], open: true
+    };
+    const scene = { animateDoor: MuseumScene.prototype.animateDoor, refreshConnectorRegions: vi.fn() };
+
+    MuseumScene.prototype.setElevatorDoor.call(scene, view, null, { immediate: true });
+    MuseumScene.prototype.setElevatorDoor.call(scene, view, 'to', { immediate: true });
+    view.elevator.entryRoomId = null;
+    view.elevator.exitRoomId = 'to';
+    view.elevator.phase = 'awaiting-exit';
+
+    expect(view.elevator).toMatchObject({ openRoomId: 'to', entryRoomId: null, exitRoomId: 'to', phase: 'awaiting-exit' });
+    expect(MuseumScene.prototype.isDoorOpen.call(scene, view, 'from')).toBe(false);
+    expect(MuseumScene.prototype.isDoorOpen.call(scene, view, 'to')).toBe(true);
+    expect(fromDoor.panels[0].element.setAttribute).toHaveBeenLastCalledWith('position', '-.5 1.3 0');
+    expect(toDoor.panels[0].element.setAttribute).toHaveBeenLastCalledWith('position', '-1 1.3 0');
   });
 });
