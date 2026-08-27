@@ -14,12 +14,12 @@
   "dependencies": {
     "aframe": "^1.8.0",
     "aframe-blink-controls": "^0.4.3",
-    "aframe-htmlmesh": "^2.6.0",
+    "aframe-htmlmesh": "^2.7.0",
     "ajv": "^8.17.1",
     "handy-work": "^3.1.13"
   },
   "devDependencies": {
-    "vite": "^7.1.1",
-    "vitest": "^3.2.4"
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
   }
 }

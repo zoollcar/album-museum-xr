@@ -2,7 +2,7 @@ import 'aframe';
 import 'aframe-blink-controls';
 import 'handy-work/build/handy-controls.min.js';
 import 'handy-work/build/magnet-helpers.min.js';
-import 'aframe-htmlmesh/build/aframe-html.min.js';
+import 'aframe-htmlmesh';
 import './styles.css';
 import { validateMuseumConfig } from './config/validate.js';
 import { buildMuseumLayout } from './museum/layout.js';
