@@ -102,9 +102,13 @@ a-scene { width: 100% !important; height: 100% !important; }
 .is-hidden { opacity: 0 !important; pointer-events: none !important; }
 .help-panel.is-hidden { transform: translateY(-8px); }
 .settings-panel.is-hidden { transform: translateY(-8px); }
-.movement-options { display: grid; gap: 12px; margin: 0; padding: 15px 0 0; border: 0; border-top: 1px solid rgba(112,86,60,.15); }
-.movement-options legend { margin-bottom: 12px; color: #6e5135; font-size: 13px; font-weight: 700; }
-.movement-options label { display: flex; gap: 8px; align-items: center; color: #5f554a; font-size: 14px; cursor: pointer; }
+.movement-options, .audio-options { display: grid; gap: 12px; margin: 0; padding: 15px 0; border: 0; border-top: 1px solid rgba(112,86,60,.15); }
+.movement-options legend, .audio-options legend { margin-bottom: 12px; color: #6e5135; font-size: 13px; font-weight: 700; }
+.movement-options label, .audio-options label { display: flex; gap: 8px; align-items: center; color: #5f554a; font-size: 14px; cursor: pointer; }
+.audio-options { margin-top: 8px; padding-bottom: 0; }
+.volume-control { display: grid !important; grid-template-columns: auto 1fr 38px; }
+.volume-control input { min-width: 0; accent-color: #886b43; }
+.volume-control output { text-align: right; font-variant-numeric: tabular-nums; }
 
 .mobile-dpad { display: none; }
 @media (pointer: coarse) {

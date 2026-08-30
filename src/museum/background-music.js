@@ -17,6 +17,9 @@ export class BackgroundMusicManager {
     this.audio.preload = 'auto';
     this.onError = onError;
     this.currentUrl = null;
+    this.trackVolume = DEFAULT_VOLUME;
+    this.volume = 1;
+    this.muted = false;
     this.blocked = false;
     this.revision = 0;
     this.unlockTargets = unlockTargets;
@@ -29,9 +32,9 @@ export class BackgroundMusicManager {
 
   setTrack(track) {
     const url = track?.url || null;
-    const volume = track?.volume ?? DEFAULT_VOLUME;
+    this.trackVolume = track?.volume ?? DEFAULT_VOLUME;
     if (url === this.currentUrl) {
-      this.audio.volume = volume;
+      this.applyPreferences();
       if (url && this.audio.paused) this.tryPlay();
       return;
     }
@@ -47,9 +50,26 @@ export class BackgroundMusicManager {
     }
 
     this.audio.src = url;
-    this.audio.volume = volume;
+    this.applyPreferences();
     this.audio.load?.();
     this.tryPlay();
+  }
+
+  setMuted(muted) {
+    this.muted = Boolean(muted);
+    this.applyPreferences();
+  }
+
+  setVolume(volume) {
+    const parsed = Number(volume);
+    if (!Number.isFinite(parsed)) return;
+    this.volume = Math.min(1, Math.max(0, parsed));
+    this.applyPreferences();
+  }
+
+  applyPreferences() {
+    this.audio.muted = this.muted;
+    this.audio.volume = this.trackVolume * this.volume;
   }
 
   async tryPlay() {

@@ -2,7 +2,7 @@ import 'aframe';
 import 'aframe-blink-controls';
 import 'handy-work/build/handy-controls.min.js';
 import 'handy-work/build/magnet-helpers.min.js';
-import 'aframe-htmlmesh';
+import 'aframe-htmlmesh/build/aframe-html.js';
 import './styles.css';
 import { validateMuseumConfig } from './config/validate.js';
 import { buildMuseumLayout } from './museum/layout.js';
@@ -12,6 +12,27 @@ import { parseSpawnRequest } from './museum/spawn.js';
 import { VrMovementModeController } from './museum/movement-mode.js';
 
 registerMuseumComponents();
+
+const MUSIC_MUTED_KEY = 'museum.backgroundMusic.muted';
+const MUSIC_VOLUME_KEY = 'museum.backgroundMusic.volume';
+
+function readMusicPreferences() {
+  try {
+    const storedVolume = Number.parseFloat(localStorage.getItem(MUSIC_VOLUME_KEY));
+    return {
+      muted: localStorage.getItem(MUSIC_MUTED_KEY) === 'true',
+      volume: Number.isFinite(storedVolume) ? Math.min(1, Math.max(0, storedVolume)) : 1
+    };
+  } catch {
+    return { muted: false, volume: 1 };
+  }
+}
+
+function storeMusicPreference(key, value) {
+  try {
+    localStorage.setItem(key, String(value));
+  } catch { /* Storage can be unavailable in private or restricted contexts. */ }
+}
 
 class MuseumUI {
   constructor() {
@@ -27,11 +48,39 @@ class MuseumUI {
     this.settings = document.getElementById('settings-panel');
     this.helpToggle = document.getElementById('help-toggle');
     this.settingsToggle = document.getElementById('settings-toggle');
+    this.musicMute = document.getElementById('music-mute');
+    this.musicVolume = document.getElementById('music-volume');
+    this.musicVolumeValue = document.getElementById('music-volume-value');
+    this.musicPreferences = readMusicPreferences();
+    this.musicMute.checked = this.musicPreferences.muted;
+    this.musicVolume.value = String(Math.round(this.musicPreferences.volume * 100));
+    this.updateMusicVolumeValue();
     this.toastTimer = null;
     this.helpToggle.addEventListener('click', () => this.setHelp(this.help.classList.contains('is-hidden')));
     document.getElementById('help-close').addEventListener('click', () => this.setHelp(false));
     this.settingsToggle.addEventListener('click', () => this.setSettings(this.settings.classList.contains('is-hidden')));
     document.getElementById('settings-close').addEventListener('click', () => this.setSettings(false));
+    this.musicMute.addEventListener('change', () => {
+      this.musicPreferences.muted = this.musicMute.checked;
+      storeMusicPreference(MUSIC_MUTED_KEY, this.musicPreferences.muted);
+      this.musicManager?.setMuted(this.musicPreferences.muted);
+    });
+    this.musicVolume.addEventListener('input', () => {
+      this.musicPreferences.volume = Number(this.musicVolume.value) / 100;
+      this.updateMusicVolumeValue();
+      storeMusicPreference(MUSIC_VOLUME_KEY, this.musicPreferences.volume);
+      this.musicManager?.setVolume(this.musicPreferences.volume);
+    });
+  }
+
+  connectBackgroundMusic(manager) {
+    this.musicManager = manager;
+    manager.setMuted(this.musicPreferences.muted);
+    manager.setVolume(this.musicPreferences.volume);
+  }
+
+  updateMusicVolumeValue() {
+    this.musicVolumeValue.textContent = `${this.musicVolume.value}%`;
   }
 
   progress(percent, title, detail) {
@@ -98,13 +147,18 @@ async function loadMuseumConfig(configUrl) {
   return response.json();
 }
 
-async function startMuseum(configUrl) {
+async function startMuseum(configUrl, { revokeConfigUrl = false } = {}) {
   const ui = new MuseumUI();
   try {
     ui.progress(16, 'Preparing the museum', 'Reading the JSON configuration…');
     const params = new URLSearchParams(window.location.search);
     const spawnRequest = parseSpawnRequest(params, window.location.hostname);
-    const config = await loadMuseumConfig(configUrl);
+    let config;
+    try {
+      config = await loadMuseumConfig(configUrl);
+    } finally {
+      if (revokeConfigUrl) URL.revokeObjectURL(configUrl);
+    }
     const validation = validateMuseumConfig(config);
     if (!validation.valid) {
       ui.fail(validation.errors);
@@ -172,9 +226,9 @@ async function setupWelcome() {
   const count = document.getElementById('museum-count');
   const status = document.getElementById('welcome-status');
   const importer = document.getElementById('tour-import');
-  const start = (configUrl) => {
+  const start = (configUrl, options) => {
     welcome.classList.add('is-hidden');
-    startMuseum(configUrl);
+    startMuseum(configUrl, options);
   };
 
   try {
@@ -201,7 +255,7 @@ async function setupWelcome() {
       const validation = validateMuseumConfig(config);
       if (!validation.valid) throw new Error(validation.errors[0]);
       const configUrl = URL.createObjectURL(new Blob([JSON.stringify(config)], { type: 'application/json' }));
-      start(configUrl);
+      start(configUrl, { revokeConfigUrl: true });
     } catch (error) {
       status.textContent = `Could not import: ${error.message || 'Invalid JSON'}`;
       importer.value = '';

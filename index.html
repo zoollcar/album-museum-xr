@@ -57,6 +57,15 @@
           <label><input type="radio" name="page-vr-movement" value="teleport" data-vr-movement checked /> Teleport</label>
           <label><input type="radio" name="page-vr-movement" value="move" data-vr-movement /> Continuous movement</label>
         </fieldset>
+        <fieldset class="audio-options">
+          <legend>Background music</legend>
+          <label><input id="music-mute" type="checkbox" /> Mute background music</label>
+          <label class="volume-control" for="music-volume">
+            <span>Volume</span>
+            <input id="music-volume" type="range" min="0" max="100" step="1" value="100" />
+            <output id="music-volume-value" for="music-volume">100%</output>
+          </label>
+        </fieldset>
       </aside>
 
       <aside id="help-panel" class="help-panel is-hidden" aria-label="Visit guide">

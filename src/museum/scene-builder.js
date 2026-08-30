@@ -98,6 +98,7 @@ export class MuseumScene {
       unlockTargets: [window, scene],
       onError: (message) => this.ui.toast(message, 4200)
     });
+    this.ui.connectBackgroundMusic?.(this.musicManager);
     this.longTasks = [];
     if (this.diagnosticsEnabled && typeof PerformanceObserver !== 'undefined') {
       try {

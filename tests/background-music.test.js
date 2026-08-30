@@ -56,4 +56,20 @@ describe('background music', () => {
     expect(audio.play).toHaveBeenCalledTimes(2);
     manager.dispose();
   });
+
+  it('applies persistent-style mute and master volume preferences across tracks', () => {
+    const audio = fakeAudio();
+    const manager = new BackgroundMusicManager({ audioFactory: () => audio, unlockTargets: [] });
+    manager.setMuted(true);
+    manager.setVolume(0.5);
+    manager.setTrack({ url: 'https://media.example.com/quiet.mp3', volume: 0.2 });
+
+    expect(audio.muted).toBe(true);
+    expect(audio.volume).toBe(0.1);
+
+    manager.setMuted(false);
+    manager.setVolume(2);
+    expect(audio.muted).toBe(false);
+    expect(audio.volume).toBe(0.2);
+  });
 });
