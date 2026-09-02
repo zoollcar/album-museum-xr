@@ -2,7 +2,7 @@ import 'aframe';
 import 'aframe-blink-controls';
 import 'handy-work/build/handy-controls.min.js';
 import 'handy-work/build/magnet-helpers.min.js';
-import 'aframe-htmlmesh/build/aframe-html.js';
+import 'aframe-htmlmesh';
 import './styles.css';
 import { validateMuseumConfig } from './config/validate.js';
 import { buildMuseumLayout } from './museum/layout.js';
@@ -136,6 +136,20 @@ function escapeHtml(value) {
   return String(value).replace(/[&<>'"]/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
 }
 
+function showStartupFailure(errors) {
+  const loadingTitle = document.getElementById('loading-title');
+  const loadingDetail = document.getElementById('loading-detail');
+  const loadingProgress = document.getElementById('loading-progress');
+  if (loadingTitle) loadingTitle.textContent = 'Museum configuration needs attention';
+  if (loadingDetail) {
+    loadingDetail.innerHTML = errors.map((error) => `<span style="display:block;margin:.45em 0">${escapeHtml(error)}</span>`).join('');
+  }
+  if (loadingProgress) {
+    loadingProgress.style.width = '100%';
+    loadingProgress.style.background = '#9b4f3f';
+  }
+}
+
 function waitForScene(scene) {
   if (scene.hasLoaded) return Promise.resolve();
   return new Promise((resolve) => scene.addEventListener('loaded', resolve, { once: true }));
@@ -148,8 +162,9 @@ async function loadMuseumConfig(configUrl) {
 }
 
 async function startMuseum(configUrl, { revokeConfigUrl = false } = {}) {
-  const ui = new MuseumUI();
+  let ui;
   try {
+    ui = new MuseumUI();
     ui.progress(16, 'Preparing the museum', 'Reading the JSON configuration…');
     const params = new URLSearchParams(window.location.search);
     const spawnRequest = parseSpawnRequest(params, window.location.hostname);
@@ -207,7 +222,9 @@ async function startMuseum(configUrl, { revokeConfigUrl = false } = {}) {
     }, { once: true });
   } catch (error) {
     console.error(error);
-    ui.fail([error.message || 'Unknown error']);
+    const errors = [error.message || 'Unknown error'];
+    if (ui) ui.fail(errors);
+    else showStartupFailure(errors);
   }
 }
 
