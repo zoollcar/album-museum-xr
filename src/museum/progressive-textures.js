@@ -1,6 +1,7 @@
 import { desiredTier, sourceForTier, TEXTURE_LIMITS } from './texture-policy.js';
 
 const DEFAULT_RETRY_DELAYS = [1000, 5000];
+const MAX_BLOB_CACHE_ENTRIES = 256;
 
 export class ProgressiveTextureManager {
   constructor({
@@ -20,6 +21,7 @@ export class ProgressiveTextureManager {
     this.items = new Map();
     this.blobCache = new Map();
     this.failedSources = new Map();
+    this.sourceOwners = new Map();
     this.countedFailures = new WeakSet();
     this.reportedFailures = new WeakSet();
     this.lastTick = this.now();
@@ -37,11 +39,35 @@ export class ProgressiveTextureManager {
   register({ id, roomId, plane, frame, sources, label = id }) {
     const item = {
       id, roomId, plane, frame, sources, label, tier: null, requestedTier: null,
-      texture: null, gazeMs: 0, gazeLostMs: 0, loading: false, disposed: false, lowReady: null
+      texture: null, gazeMs: 0, gazeLostMs: 0, loading: false, disposed: false, lowReady: null,
+      sourceUrls: [...new Set(Object.values(sources).filter(Boolean))]
     };
     this.items.set(id, item);
+    this.retainSources(item);
     item.lowReady = this.requestTier(item, 'low');
     return () => this.disposeItem(id);
+  }
+
+  retainSources(item) {
+    for (const url of item.sourceUrls) {
+      const owners = this.sourceOwners.get(url) || new Map();
+      owners.set(item.roomId, (owners.get(item.roomId) || 0) + 1);
+      this.sourceOwners.set(url, owners);
+    }
+  }
+
+  releaseSources(item) {
+    for (const url of item.sourceUrls || []) {
+      const owners = this.sourceOwners.get(url);
+      if (!owners) continue;
+      const remaining = (owners.get(item.roomId) || 0) - 1;
+      if (remaining > 0) owners.set(item.roomId, remaining);
+      else owners.delete(item.roomId);
+      if (owners.size) continue;
+      this.sourceOwners.delete(url);
+      this.blobCache.delete(url);
+      this.failedSources.delete(url);
+    }
   }
 
   setRoomPriority(roomId, priority) {
@@ -75,22 +101,32 @@ export class ProgressiveTextureManager {
   }
 
   async fetchBlob(url) {
-    if (!this.blobCache.has(url)) {
-      this.blobCache.set(url, fetch(url, { mode: 'cors', credentials: 'omit' }).then((response) => {
-        if (!response.ok) {
-          const error = new Error(`${response.status} ${response.statusText}`);
-          error.retryable = response.status === 408 || response.status === 429 || response.status >= 500;
-          throw error;
-        }
-        return response.blob();
-      }).catch((error) => {
-        if (error.retryable === undefined && error instanceof TypeError) error.retryable = true;
-        this.blobCache.delete(url);
-        throw error;
-      }));
-      window.setTimeout(() => this.blobCache.delete(url), 5000);
+    let request = this.blobCache.get(url);
+    if (request) {
+      this.blobCache.delete(url);
+      this.blobCache.set(url, request);
+      return request;
     }
-    return this.blobCache.get(url);
+    request = fetch(url, { mode: 'cors', credentials: 'omit' }).then((response) => {
+      if (!response.ok) {
+        const error = new Error(`${response.status} ${response.statusText}`);
+        error.retryable = response.status === 408 || response.status === 429 || response.status >= 500;
+        throw error;
+      }
+      return response.blob();
+    }).catch((error) => {
+      if (error.retryable === undefined && error instanceof TypeError) error.retryable = true;
+      if (this.blobCache.get(url) === request) this.blobCache.delete(url);
+      throw error;
+    });
+    this.blobCache.set(url, request);
+    while (this.blobCache.size > MAX_BLOB_CACHE_ENTRIES) {
+      this.blobCache.delete(this.blobCache.keys().next().value);
+    }
+    window.setTimeout(() => {
+      if (this.blobCache.get(url) === request) this.blobCache.delete(url);
+    }, 5000);
+    return request;
   }
 
   async createTexture(url, maxEdge) {
@@ -156,7 +192,7 @@ export class ProgressiveTextureManager {
         texture.dispose();
       }
       if (tier === 'original') this.originalOwners.delete(item.id);
-      if (error.name !== 'AbortError') {
+      if (!item.disposed && error.name !== 'AbortError') {
         const failure = this.recordFailure(source.url, error);
         if (!this.reportedFailures.has(error)) {
           this.reportedFailures.add(error);
@@ -265,6 +301,7 @@ export class ProgressiveTextureManager {
     item.disposed = true;
     if (item.texture) this.disposeTexture(item.texture, { immediate, owner: `texture:${item.roomId}` });
     this.originalOwners.delete(id);
+    this.releaseSources(item);
     this.items.delete(id);
   }
 
@@ -272,5 +309,6 @@ export class ProgressiveTextureManager {
     for (const id of [...this.items.keys()]) this.disposeItem(id, { immediate: true });
     this.blobCache.clear();
     this.failedSources.clear();
+    this.sourceOwners.clear();
   }
 }

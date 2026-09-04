@@ -112,4 +112,34 @@ describe('progressive texture scheduling', () => {
 
     expect(manager.createTexture).toHaveBeenCalledOnce();
   });
+
+  it('releases room-owned blob and failure cache entries without disrupting shared sources', () => {
+    globalThis.THREE = { Vector3 };
+    const manager = new ProgressiveTextureManager({ camera: null });
+    manager.requestTier = vi.fn(() => Promise.resolve());
+    const photo = (roomId) => ({
+      id: `${roomId}-photo`, roomId, plane: {}, frame: null,
+      sources: { original: '/shared.jpg', low: `/${roomId}-low.jpg` }
+    });
+
+    manager.register(photo('first'));
+    manager.register(photo('second'));
+    manager.blobCache.set('/shared.jpg', Promise.resolve(new Blob()));
+    manager.blobCache.set('/first-low.jpg', Promise.resolve(new Blob()));
+    manager.failedSources.set('/shared.jpg', { exhausted: true });
+    manager.failedSources.set('/first-low.jpg', { exhausted: true });
+
+    manager.disposeRoom('first');
+
+    expect(manager.blobCache.has('/first-low.jpg')).toBe(false);
+    expect(manager.failedSources.has('/first-low.jpg')).toBe(false);
+    expect(manager.blobCache.has('/shared.jpg')).toBe(true);
+    expect(manager.failedSources.has('/shared.jpg')).toBe(true);
+
+    manager.disposeRoom('second');
+
+    expect(manager.blobCache.has('/shared.jpg')).toBe(false);
+    expect(manager.failedSources.has('/shared.jpg')).toBe(false);
+    expect(manager.sourceOwners.size).toBe(0);
+  });
 });
